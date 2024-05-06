@@ -1,0 +1,56 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "编译",
+            "type": "shell",
+            "command": [
+                //B"${workspaceFolder}/MDK-ARM/trice.exe u -src ${workspaceFolder}/MDK-ARM/",
+                "make" //make -j
+            ],
+            "group": "build"
+        },
+        {
+            "label": "烧录",
+            "type": "shell",
+            "command": "make Download_BIN",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "重建",
+            "type": "shell",
+            "command": "make", //make -j
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "dependsOn": "清除编译"
+        },
+        {
+            "label": "清除编译",
+            "type": "shell",
+            "command": "make clean",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "开启RTT",
+            "type": "shell",
+            "command": "openocd -f stm32f4xx_SEGGER_RTT.cfg",
+            "group": "build",
+        },
+        {
+            "label": "获取trice日志",
+            "type": "shell",
+            "command": "${workspaceFolder}/MDK-ARM/trice log -port TCP4 -args localhost: 8765",
+            "group": "build",
+        }
+    ]
+}

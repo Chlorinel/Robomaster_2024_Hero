@@ -1,0 +1,138 @@
+{
+	"1002": {
+		"Type": "TRICE",
+		"Strg": "MSG: Start robot init process\\n"
+	},
+	"1003": {
+		"Type": "TRICE",
+		"Strg": "ERROR:CAN2 ERROR,errorcode:0x%x\\n"
+	},
+	"1004": {
+		"Type": "TRICE",
+		"Strg": "ERROR: MOTOR offline,motor_status:0x%x\\n"
+	},
+	"1005": {
+		"Type": "TRICE",
+		"Strg": "ERROR: IMU offline,IMU_status:0x%x\\n"
+	},
+	"2001": {
+		"Type": "TRICE",
+		"Strg": "MSG: POR/BOR startup, wait for 50ms for settle\\n"
+	},
+	"2002": {
+		"Type": "TRICE",
+		"Strg": "MSG: bmi088 init successfully\\n"
+	},
+	"2003": {
+		"Type": "TRICE",
+		"Strg": "ERR:Err[%d] init_bmi08x() failed\\n"
+	},
+	"3001": {
+		"Type": "TRICE",
+		"Strg": "MSG: POR/BOR startup, wait for 50ms for settle\\n"
+	},
+	"3002": {
+		"Type": "TRICE",
+		"Strg": "MSG: bmi088 init successfully\\n"
+	},
+	"3003": {
+		"Type": "TRICE",
+		"Strg": "ERR:Err[%d] init_bmi08x() failed\\n"
+	},
+	"33236": {
+		"Type": "TRICE",
+		"Strg": "ERROR:CAN1 ERROR,errorcode:0x%x\\n"
+	},
+	"33272": {
+		"Type": "TRICE",
+		"Strg": "ERR: MOTOR offline,motor_status:0x%x\\n"
+	},
+	"34640": {
+		"Type": "TRICE0",
+		"Strg": "s:                                          \\n"
+	},
+	"35751": {
+		"Type": "TRICE",
+		"Strg": "MSG: try to reset robot,RCC_CSR=0x%x\\n"
+	},
+	"36291": {
+		"Type": "TRICE8",
+		"Strg": "s:     STM32     TRICE_MODE %3u     \\n"
+	},
+	"37130": {
+		"Type": "TRICE32",
+		"Strg": "att:Single Trice Stack buf size:%4u"
+	},
+	"40921": {
+		"Type": "TRICE",
+		"Strg": "ERR:CAN1 ERROR,errorcode:0x%x\\n"
+	},
+	"41052": {
+		"Type": "TRICE32",
+		"Strg": "att: Trice 2x half buffer size:%4u "
+	},
+	"41119": {
+		"Type": "TRICE",
+		"Strg": "ERROR:CAN2 ERROR,errorcode:0x%x\\n"
+	},
+	"41701": {
+		"Type": "TRICE",
+		"Strg": "MSG: Start robot init process\\n"
+	},
+	"42877": {
+		"Type": "TRICE",
+		"Strg": "MSG: try to reset robot,RCC_CSR=0x%x\\n"
+	},
+	"44399": {
+		"Type": "TRICE",
+		"Strg": "ERROR: MOTOR offline,motor_status:0x%x\\n"
+	},
+	"46427": {
+		"Type": "TRICE0",
+		"Strg": "s:     \\n"
+	},
+	"49248": {
+		"Type": "TRICE",
+		"Strg": "ERR:CAN2 ERROR,errorcode:0x%x\\n"
+	},
+	"49264": {
+		"Type": "TRICE",
+		"Strg": "MSG: bmi088 init successfully\\n"
+	},
+	"52064": {
+		"Type": "TRICE0",
+		"Strg": "s:     "
+	},
+	"53643": {
+		"Type": "TRICE",
+		"Strg": "MSG: POR/BOR startup, wait for 50ms for settle\\n"
+	},
+	"54911": {
+		"Type": "TRICE",
+		"Strg": "MSG: Start robot init process\\n"
+	},
+	"56816": {
+		"Type": "TRICE0",
+		"Strg": "s:                                          \\n"
+	},
+	"57449": {
+		"Type": "TRICE0",
+		"Strg": "s:                                          \\n"
+	},
+	"58105": {
+		"Type": "TRICE",
+		"Strg": "ERR:Err[%d] init_bmi08x() failed\\n"
+	},
+	"59642": {
+		"Type": "TRICE",
+		"Strg": "MSG: bmi088 init successfully\\n"
+	},
+	"61732": {
+		"Type": "TRICE32",
+		"Strg": "wrn:Transmit buffer truncated from %u to %u\\n"
+	},
+	"62012": {
+		"Type": "TRICE",
+		"Strg": "ERROR:CAN1 ERROR,errorcode:0x%x\\n"
+	}
+}

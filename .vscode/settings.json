@@ -1,0 +1,24 @@
+{
+    "C_Cpp.clang_format_style": "Visual Studio",
+    "DockerRun.DisableDockerrc": true,
+    "files.associations": {
+        "robot.h": "c",
+        "drv_conf.h": "c",
+        "can.h": "c",
+        "super_cap.h": "c",
+        "interface_btb.h": "c",
+        "gimbal_motor_ctrl.h": "c",
+        "buzzer.h": "c",
+        "ballistic.h": "c",
+        "move_ctrl.h": "c",
+        "drv_can.h": "c",
+        "main.h": "c",
+        "math.h": "c",
+        "zero_new_bee_filter.h": "c",
+        "stdlib.h": "c",
+        "motor_ctrl.h": "c",
+        "motor.h": "c",
+        "power_ctrl.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}

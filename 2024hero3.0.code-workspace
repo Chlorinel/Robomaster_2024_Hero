@@ -1,0 +1,13 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "gimbal_motor_ctrl.h": "c",
+            "referee_conf.h": "c"
+        }
+    }
+}

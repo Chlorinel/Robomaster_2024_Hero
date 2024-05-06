@@ -18,6 +18,7 @@
 #include "./graphic/graphic_def.h"
 
 // #include "./robot_core/interface/interface_BTB.h"
+//
 
 #include "./robot_core/ctrl_core/chassis_motor_ctrl.h"
 #include "./robot_core/ctrl_core/gimbal_motor_ctrl.h"
@@ -36,19 +37,19 @@
  */
 uint8_t contral_conut = 0;
 
-robot_ctrl_t robot = {.ctrl_mode = 0,
-                      .weapon.expt_front_v_shooter = 19,
-                      .weapon.expt_back_v_shooter = 17.35,
-                      .weapon.real_v_shooter = INIT_SHOOT_SPEED,
-                      .weapon.last_real_v_shooter = INIT_SHOOT_SPEED,
-                      .weapon.ctrl_mode = _manual_ctrl,
-                      .weapon.f_is_fire = is_fire_rc,
-                      .weapon.f_is_ready_to_fire = is_ready_to_fire_rc,
-                      .weapon._is_vision_ok = VISION_NOTARGET,
-                      .is_bule_or_red = 3,
-.chassis_mode = chassis_disable,
-}
-;
+robot_ctrl_t robot = {
+    .ctrl_mode = 0,
+    .weapon.expt_front_v_shooter = 19,
+    .weapon.expt_back_v_shooter = 17.35,
+    .weapon.real_v_shooter = INIT_SHOOT_SPEED,
+    .weapon.last_real_v_shooter = INIT_SHOOT_SPEED,
+    .weapon.ctrl_mode = _manual_ctrl,
+    .weapon.f_is_fire = is_fire_rc,
+    .weapon.f_is_ready_to_fire = is_ready_to_fire_rc,
+    .weapon._is_vision_ok = VISION_NOTARGET,
+    .is_bule_or_red = 3,
+    .chassis_mode = chassis_disable,
+};
 robot_ctrl_t *get_p_robot(void) { return &robot; }
 
 referee_info_t referee_info;

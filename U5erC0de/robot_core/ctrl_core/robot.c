@@ -18,7 +18,6 @@
 #include "./graphic/graphic_def.h"
 
 // #include "./robot_core/interface/interface_BTB.h"
-//
 
 #include "./robot_core/ctrl_core/chassis_motor_ctrl.h"
 #include "./robot_core/ctrl_core/gimbal_motor_ctrl.h"
@@ -40,14 +39,14 @@ uint8_t contral_conut = 0;
 robot_ctrl_t robot = {
     .ctrl_mode = 0,
     .weapon.expt_front_v_shooter = 19,
-    .weapon.expt_back_v_shooter = 17.35,
+    .weapon.expt_back_v_shooter = 18.6, // gen2:18.6 //白：17.43
     .weapon.real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.last_real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.ctrl_mode = _manual_ctrl,
     .weapon.f_is_fire = is_fire_rc,
     .weapon.f_is_ready_to_fire = is_ready_to_fire_rc,
     .weapon._is_vision_ok = VISION_NOTARGET,
-    .is_bule_or_red = 3,
+
     .chassis_mode = chassis_disable,
 };
 robot_ctrl_t *get_p_robot(void) { return &robot; }
@@ -103,6 +102,9 @@ void robot_init() {
   HAL_TIM_Base_Start_IT(&htim5);
   robot.timestep = 0;
   robot.is_imu_ctrl_yaw = 1;
+  robot.is_bule_or_red = 2;
+  robot.base_speed = 1;
+  robot.tank_speed = 1;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -176,7 +178,7 @@ void gimbal_get_ctrl_way(void) {
     robot.robot_flag.vt_config_flag = 0;
     // 断控
 
-    if (rc_left_switch == 1 && rc_right_switch == 1 ||
+    if (((rc_left_switch == 1) && (rc_right_switch == 1)) ||
         (robot.robot_flag.referee_kill_flag == true)) {
       robot.robot_flag.vt_ctrl_flag = 0;
       robot_gimbal_power_off;
@@ -187,6 +189,7 @@ void gimbal_get_ctrl_way(void) {
 
         is_rc_offline() == true) {
       robot.ctrl_mode = 1;
+
       robot_gimbal_power_off;
       robot_chassis_power_off;
     }
@@ -196,7 +199,10 @@ void gimbal_get_ctrl_way(void) {
         (IS_KEY_PRESS(KEY_E) == true && IS_KEY_LAST_PRESS(KEY_E) != true)) {
       robot.robot_flag.vt_ctrl_flag = !robot.robot_flag.vt_ctrl_flag;
     }
-
+    if ((IS_KEY_PRESS(KEY_Q) == true && IS_KEY_LAST_PRESS(KEY_Q) != true) &&
+        (IS_KEY_PRESS(KEY_R) == true && IS_KEY_LAST_PRESS(KEY_R) != true)) {
+      robot.robot_flag.vt_config_flag = !robot.robot_flag.vt_config_flag;
+    }
     // 断控
     if (robot.robot_flag.vt_ctrl_flag == 0 ||
         (robot.robot_flag.referee_kill_flag == true)) {
@@ -210,7 +216,12 @@ void gimbal_get_ctrl_way(void) {
     }
   }
 
-  if (switch_to_mouse_ctrl == true || robot.ctrl_mode == 1) { // 键鼠控制
+  if (switch_to_mouse_ctrl == true ||( robot.ctrl_mode == 1&&robot.robot_flag.vt_config_flag == 0)) { // 键鼠控制
+    robot.tank_speed += Mouse_z / (fs_tim_freq * 3);
+    if (robot.tank_speed <= 0.1) {
+      robot.tank_speed = 0.1;
+    }if(robot.tank_speed>=4)
+		{robot.tank_speed=4;}
 
     // 模式选择
     if (IS_KEY_PRESS(KEY_Q) == true && IS_KEY_LAST_PRESS(KEY_Q) != true)
@@ -264,8 +275,8 @@ void gimbal_get_ctrl_way(void) {
     }
     // 移动控制
     if (robot.move_mode != _lob_mode) { // 非吊射
-      robot.vx = (vcnt[0] - vcnt[1]);
-      robot.vy = (vcnt[3] - vcnt[2]);
+      robot.vx = (vcnt[0] - vcnt[1]) * robot.base_speed;
+      robot.vy = (vcnt[3] - vcnt[2]) * robot.base_speed;
       robot.v_yaw = -2 * PI * k_yaw * Mouse_x;
       robot.v_pitch = -2 * PI * k_pitch * Mouse_y;
     } else if (robot.move_mode == _lob_mode &&
@@ -368,7 +379,7 @@ void gimbal_get_ctrl_way(void) {
       robot.robot_flag.chassis_super_cap_enable_flag = 0;
   } else if (switch_to_config_mode ||
              (robot.ctrl_mode == 1 &&
-              IS_KEY_PRESS(KEY_R) == true)) { // 配置模式
+              robot.robot_flag.vt_config_flag == 1)) { // 配置模式
     robot_gimbal_power_on;
     robot.vy = 0;
     robot.vx = 0;
@@ -398,11 +409,12 @@ void gimbal_get_ctrl_way(void) {
       robot.weapon.ctrl_mode = _manual_ctrl;
     }
     if (IS_KEY_PRESS(KEY_A) == true && IS_KEY_LAST_PRESS(KEY_A) == false) {
-      robot.is_bule_or_red = 1;
+      robot.is_bule_or_red += 1;
     }
-    if (IS_KEY_PRESS(KEY_D) == true && IS_KEY_LAST_PRESS(KEY_D) == false) {
+    if (robot.is_bule_or_red == 3) {
       robot.is_bule_or_red = 0;
     }
+
   } else if (rc_left_switch != rc_sw_top &&
              robot.ctrl_mode == 0) { // 遥控器控制
     // 模式选择
@@ -415,6 +427,7 @@ void gimbal_get_ctrl_way(void) {
       if (rc_right_switch == rc_sw_top) {
         robot.move_mode = _tank_mode;
         robot.is_imu_ctrl_yaw = 1;
+
         robot.weapon.ctrl_mode = _vision_ctrl;
 
         robot.robot_flag.gimbal_fuck_mode_flag = 0;
@@ -440,8 +453,8 @@ void gimbal_get_ctrl_way(void) {
     }
     // 运动控制
     robot_gimbal_power_on;
-    robot.vx = s_curve(1, rc_left_x);
-    robot.vy = -s_curve(1, rc_left_y);
+    robot.vx = s_curve(1, rc_left_x) * robot.base_speed;
+    robot.vy = -s_curve(1, rc_left_y) * robot.base_speed;
     robot.v_yaw = -2 * PI * k_yaw_rc * rc_right_x;
     robot.v_pitch = -2 * PI * k_pitch_rc * rc_right_y;
 
@@ -522,7 +535,7 @@ void robot_gimbal_tim_loop(void) {
     bool is_switch_to_vision_ctrl = robot.weapon.ctrl_mode == _vision_ctrl;
     bool is_tracker_reset_over = resetTracker(is_switch_to_vision_ctrl);
     if (is_switch_to_vision_ctrl == true) {
-      // if (0) {
+
       if (is_tracker_reset_over == true &&
           robot.weapon._is_vision_ok == VISION_OK &&
           is_vision_offline() == false) { // reset成功,开始接入视觉数据
@@ -542,8 +555,6 @@ void robot_gimbal_tim_loop(void) {
       robot.robot_flag.vision_data_ready_flag = 0;
       delta_yaw_ang = robot.v_yaw / fs_tim_freq;
       delta_pitch_ang = robot.v_pitch / fs_tim_freq;
-      // get_p_gimbal_expt_state()->pitch=deg2rad(mid_pitch_test)+
-      // deg2rad(A_pitch_test)*sin(omega_pitch_test*HAL_GetTick()/1000.f);
     }
     gimbal_ctrl(delta_yaw_ang, delta_pitch_ang);
 
@@ -568,7 +579,7 @@ void robot_gimbal_tim_loop(void) {
     default:
       break;
     }
-    // 底盘速度控制
+
     // 发弹控制
     shooter_control_loop(robot.weapon.expt_back_v_shooter);
     break;
@@ -616,10 +627,7 @@ void robot_gimbal_tim_loop(void) {
     break;
   }
   }
-  // 各电机输出
-  // gimbal_ctrl(0, gimbal_real_state.pitch);
-  //  各电机输出
-  // set_fc_motor_output(robot.weapon.is_load);
+
   if (contral_conut % 3 == 2 || contral_conut % 3 == 1) {
     set_all_gimbal_motor_output();
   }
@@ -636,21 +644,16 @@ void robot_gimbal_tim_loop(void) {
 pid_struct_t power_pid = {
     .kp = 4, .ki = 0.5, .kd = 3, .i_max = 0.05, .out_max = 6};
 float temp_error;
-float k_power = 0.3;
+float k_power = 1.2;
 void robot_chassis_tim_loop(void) {
   // 运动控制部分
 
   // update_chassis_real_state();
   chassis_get_ctrl_way();
   if (robot.robot_flag.chassis_super_cap_enable_flag == 1) {
-    temp_error = pid_calc(
-        &power_pid, 0,
-        NL_Deadband((60 - (power_heat_data.chassis_power_buffer)), 50, 3));
-    robot.vx = robot.vx * k_power;
-    robot.vy = robot.vy * k_power;
+    robot.base_speed = 4;
   } else {
-    robot.vx = MAX_V1 * robot.vx;
-    robot.vy = MAX_V1 * robot.vy;
+    robot.base_speed = robot.tank_speed;
   }
   if (robot.chassis_mode(robot.expt_delta_yaw, robot.vx, robot.vy) == true)
     robot.chassis_curr_state = chassis_power_on;

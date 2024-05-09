@@ -23,7 +23,7 @@ typedef __packed struct {
   // uint8_t exposure_time : 2;
   uint8_t is_play : 1;
   bool reset_lost : 1;
-  uint8_t reserved : 2;
+  uint8_t reserved :2;
 
   float roll;
   float pitch;

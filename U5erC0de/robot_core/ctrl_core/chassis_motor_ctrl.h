@@ -22,7 +22,7 @@ typedef union {
   };
   motor_t _all_chassis_motors[6];
 } chassis_motors_t;
-
+extern chassis_motors_t chassis_motors;
 // typedef struct {
 //   float max_total_out; ///< total maximum output of motor,set to >=
 //   ///< 4*C620_OUTPUT_MAX to disable

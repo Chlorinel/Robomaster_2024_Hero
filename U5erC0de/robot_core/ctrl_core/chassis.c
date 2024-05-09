@@ -246,7 +246,8 @@ bool chassis_spin_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
     // 小陀螺时要x/y需求过大时,则自动切换到坦克模式
     chassis_expt_wz = 0;
   else { // 小陀螺时要x/y需求较小时,则吃满功率小陀螺
-    spin_speed = set_spin_speed(game_robot_status.chassis_power_limit);
+    spin_speed = set_spin_speed(game_robot_status.chassis_power_limit) *
+                 robot.base_speed / 2;
     chassis_expt_wz =
         // sign(chassis_real_state.wz) * fabs(chassis_power_lim.expt_wz);
         sign(chassis_real_state.wz) * fabsf(spin_speed);
@@ -340,7 +341,7 @@ float chassis_expt_vx, chassis_expt_vy, chassis_expt_wz, chassis_expt_x,
 
 float ratio_vx1 = 0.1;
 float ratio_vy1 = 0.1;
-float chassis_expt_wz_thershold = 0.1;
+float chassis_expt_wz_thershold = 0.2;
 float deg111 = 0.706206799;
 
 bool change_dirc_over_flag = false;

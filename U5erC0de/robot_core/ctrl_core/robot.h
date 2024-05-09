@@ -62,8 +62,10 @@ typedef struct {
   } IMU_status;
   bool ctrl_mode; // 控制模式，0为遥控器，1为图传；
   uint32_t timestep;
-  bool is_bule_or_red; // bule:1   red:0  裁判系统：3
+  uint8_t is_bule_or_red; // bule:1   red:0  裁判系统：3
   bool is_imu_ctrl_yaw;
+  float base_speed;
+  float tank_speed;
   float vx, vy, wz;
   float v_yaw, v_pitch;
 

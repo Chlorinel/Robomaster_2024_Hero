@@ -311,6 +311,16 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
   /* USER CODE BEGIN TIM8_TRG_COM_TIM14_IRQn 0 */
   update_chassis_motor_status();
   update_gimbal_motor_status();
+  if ((HAL_CAN_GetError(&hcan1) & HAL_CAN_ERROR_BOF)) {
+    CAN1->MCR |= CAN_MCR_INRQ;
+    HAL_CAN_Start(&hcan1);
+  }
+
+  if ((HAL_CAN_GetError(&hcan2) & HAL_CAN_ERROR_BOF)) {
+    CAN2->MCR |= CAN_MCR_INRQ;
+    HAL_CAN_Start(&hcan2);
+  }
+
   /* USER CODE END TIM8_TRG_COM_TIM14_IRQn 0 */
   HAL_TIM_IRQHandler(&htim14);
   /* USER CODE BEGIN TIM8_TRG_COM_TIM14_IRQn 1 */

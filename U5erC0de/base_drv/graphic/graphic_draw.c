@@ -132,7 +132,7 @@ void update_UI(void) { // 静态图层的设置
 
   UI_count++;
   chassis_state_t chassis_real_state = *get_p_chassis_real_state();
-  float ang_del = chassis_real_state.yaw;
+  float ang_del = chassis_motors._all_chassis_motors[4].real.abs_angle;
 
   float sin_yaw = sinf(ang_del); // 角度差转换为弧度
   float cos_yaw = cosf(ang_del);

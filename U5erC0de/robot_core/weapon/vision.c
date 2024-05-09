@@ -35,7 +35,7 @@ float CONST_SHOOT_DELAY = 0.32; // 0.25f; // 固定发射延时
 // 0807
 //->0.32	先0.3滞后,调高到0.32后过几小时又超前
 //  0806
-//->0.25	到深圳后第一晚取消发弹延迟调出的参数
+//->0.25
 //  0727
 //->0.10	左转小寄不算寄,
 //->0.18	晚上好但又寄了
@@ -75,7 +75,7 @@ uint8_t vision_color;
 uint8_t is_red_or_blue(void) { // 蓝给0,红给1
 
   vision_color = robot.is_bule_or_red;
-  if (vision_color = 3) {
+  if (vision_color == 2) {
     return (referee_info.robot_id < 100);
   } else {
     return robot.is_bule_or_red;

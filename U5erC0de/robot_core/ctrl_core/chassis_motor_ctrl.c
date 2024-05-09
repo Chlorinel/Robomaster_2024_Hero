@@ -131,7 +131,8 @@ chassis_power_lim_ta power_a = {.max_total_out = 4.0f * 16384,
 pid_struct_t power_base_ratio_pid = {
     .kp = 0.008f, .ki = 0.001f, .kd = 0.f, .i_max = 1.f, .out_max = 1.f};
 pid_struct_t power_limit_pid_Nban = {
-    .kp = 0.08f, .ki = 2.001f, .kd = 0.f, .i_max = 0.1f, .out_max = 1.f};
+    .kp = 0.06f, .ki = 1.001f, .kd = 0.f, .i_max = 0.1f, .out_max = 1.f};
+uint8_t error[2] = {0};
 void self_power_ctrl(
     chassis_power_lim_ta *chassis_power_lim) // 输出chassis_power_lim
 {
@@ -145,14 +146,20 @@ void self_power_ctrl(
   LIMIT_MIN_MAX(power_base_ratio, 0.f, 1.f);
 
   result_ratio = pid_calc(&power_limit_pid_Nban,
-                          power_heat_data.chassis_power_buffer, 60 * 0.9f) *
+                          power_heat_data.chassis_power_buffer, 54.f) *
                  power_base_ratio;
   // result_ratio = pid_calc(&power_unlimit_pid_Nban,
   // power_heat_data.chassis_power_buffer, POWER_BUFFER_PEAK * 0.2f) *
   // power_base_ratio;
 
   if (result_ratio < 0) {
-    result_ratio = 0.f;
+    result_ratio = 0.0f;
+    error[0] += 1;
+  } else if (isnan(result_ratio) == 1) {
+    result_ratio = 0.1f;
+    error[2] += 1;
+    power_base_ratio_pid.err[0] = 0;
+    power_base_ratio_pid.err[1] = 0;
   }
   chassis_power_lim->power_limit_ratio = result_ratio;
 }
@@ -162,10 +169,12 @@ void self_power_ctrl(
 /**
  * @breif  wheel电机初始化参数
  */
-float wheel_kpid_vel[3] = {10, 0.8, 0};
+float wheel_kpid_vel[3] = {8, 0.8, 0};
 
-pid_struct_t vx_offset_pid = {.kp = 1, .ki = 0.1, .i_max = 0.4, .out_max = 1.5};
-pid_struct_t vy_offset_pid = {.kp = 1, .ki = 0.1, .i_max = 0.4, .out_max = 1.5};
+pid_struct_t vx_offset_pid = {
+    .kp = 1.4, .ki = 0.1, .i_max = 0.4, .out_max = 1.5};
+pid_struct_t vy_offset_pid = {
+    .kp = 1.4, .ki = 0.1, .i_max = 0.4, .out_max = 1.5};
 /**
  * @brief   拨盘电机的初始化函数,内含电机初始化、位置控制初始化、功率限制初始化
  */

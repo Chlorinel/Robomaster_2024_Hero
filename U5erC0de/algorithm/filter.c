@@ -19,9 +19,9 @@ float LPF_update(LPF_t *filter, float new_value) {
   filter->orig_val = new_value;
   float temp =
       filter->fltr_val + filter->a * (filter->orig_val - filter->fltr_val);
-  if (isnan(temp) == 0)
-
+  if (isnan(temp) == 0) {
     filter->fltr_val = temp;
+  }
   return filter->fltr_val;
 }
 

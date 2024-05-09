@@ -8,6 +8,9 @@
         "files.associations": {
             "gimbal_motor_ctrl.h": "c",
             "referee_conf.h": "c"
-        }
+        },
+        "stm32-for-vscode.openOCDPath": false,
+        "stm32-for-vscode.makePath": false,
+        "stm32-for-vscode.armToolchainPath": false
     }
 }

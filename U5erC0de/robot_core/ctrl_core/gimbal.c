@@ -50,7 +50,6 @@ void gimbal_init(void) {
 
       rx_stdid_of(left_friction_motor),
       rx_stdid_of(right_friction_motor),
-    
 
   };
   can_user_init(&GIMBAL_MOTOR_CAN, Fliter_List, MOTOR_FIFO, MOTOR_FLTRNUM);
@@ -138,6 +137,7 @@ float pitch_real_rel_deg_max = 20.f;
 float pitch_real_rel_deg_min = -46.f;
 float pitch_real_rel_angle_max = 0.35f;  // 0.30f
 float pitch_real_rel_angle_min = -0.60f; // -0.75f
+float test_a12;
 void gimbal_ctrl(float delta_yaw_ang, float delta_pitch_ang) {
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // 调试部分
@@ -172,6 +172,7 @@ void gimbal_ctrl(float delta_yaw_ang, float delta_pitch_ang) {
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // pitch计算
   gimbal_expt_state.pitch += delta_pitch_ang;
+  // gimbal_expt_state.pitch = test_a12;
   gimbal_expt_state.pitch = range_map(gimbal_expt_state.pitch, -PI, PI);
   CLAMP(gimbal_expt_state.pitch, pitch_real_rel_angle_min,
         pitch_real_rel_angle_max);

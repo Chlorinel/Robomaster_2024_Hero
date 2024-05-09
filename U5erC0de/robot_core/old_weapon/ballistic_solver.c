@@ -6,7 +6,6 @@
 #include "./robot_core/weapon/fire_ctrl.h"
 #include "./robot_core/weapon/vision.h"
 
-
 float predict_time = 0.6f;
 float raw_predict_time = 0.f;
 
@@ -45,26 +44,27 @@ void update_cur_v0_kalman(void) {
   }
 }
 
-void update_predict_time(void) {
-  if (vision_ctrl_data.target_found) {
-    if (cur_v0 != 0.0f) {
-      raw_predict_time =
-          target.x0 / (cur_v0 * cosf(vision_request.pitch)) // 斜抛运动发射耗时
-          + CONST_SHOOT_DELAY;
-      //+ CONST_SHOOT_DELAY
-      //// 弹丸加速用时
-      //+ EXTERNAL_DELAY;
-      //// 视觉解算及通讯时间延时
-      //+ (HAL_GetTick()-last_frame_tick);
-      ////USB通讯用时
-    } else
-      raw_predict_time = CONST_SHOOT_DELAY;
-    CLAMP(raw_predict_time, 0.0f, MAX_PREDICT_T);
-    predict_time = raw_predict_time;
-  } else {
-    predict_time = 0.0f;
-  }
-}
+// void update_predict_time(void) {
+//   if (vision_ctrl_data.target_found) {
+//     if (cur_v0 != 0.0f) {
+//       raw_predict_time =
+//           target.x0 / (cur_v0 * cosf(vision_request.pitch)) //
+//           斜抛运动发射耗时
+//           + CONST_SHOOT_DELAY;
+//       //+ CONST_SHOOT_DELAY
+//       //// 弹丸加速用时
+//       //+ EXTERNAL_DELAY;
+//       //// 视觉解算及通讯时间延时
+//       //+ (HAL_GetTick()-last_frame_tick);
+//       ////USB通讯用时
+//     } else
+//       raw_predict_time = CONST_SHOOT_DELAY;
+//     CLAMP(raw_predict_time, 0.0f, MAX_PREDICT_T);
+//     predict_time = raw_predict_time;
+//   } else {
+//     predict_time = 0.0f;
+//   }
+// }
 
 float shooter_yaw_offset = 0.0126f - 0.0015625f;
 float shooter_pitch_offset = 0;

@@ -110,6 +110,7 @@ void update_chassis_real_state(void) {
  */
 bool chassis_lob_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
   chassis_ctrl(expt_delta_yaw, expt_vx, expt_vy, 0);
+	return true;
 }
 
 /**
@@ -241,13 +242,13 @@ bool chassis_spin_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
   float chassis_expt_wz;
 
   // 依据移动来选择
-  // if (chassis_power_lim.weight_of_wz < k_spin) // 0.03;  // 0.01;
-  if (0)
-    // 小陀螺时要x/y需求过大时,则自动切换到坦克模式
+//  if (chassis_power_lim.weight_of_wz < k_spin) // 0.03;  // 0.01;
+	if(0)
     chassis_expt_wz = 0;
+  // 小陀螺时要x/y需求过大时,则自动切换到坦克模式
+
   else { // 小陀螺时要x/y需求较小时,则吃满功率小陀螺
-    spin_speed = set_spin_speed(game_robot_status.chassis_power_limit) *
-                 robot.base_speed / 2;
+    spin_speed = set_spin_speed(game_robot_status.chassis_power_limit);
     chassis_expt_wz =
         // sign(chassis_real_state.wz) * fabs(chassis_power_lim.expt_wz);
         sign(chassis_real_state.wz) * fabsf(spin_speed);

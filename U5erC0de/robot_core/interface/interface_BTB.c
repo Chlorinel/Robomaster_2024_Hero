@@ -49,7 +49,7 @@ HAL_StatusTypeDef BTB_init(void) {
   // 依据包权重分配stdid
 
   // 赋值指针,以便于get_random与update使用
-  uint8_t temp[2] = {0}; // 记载偏移量
+//  uint8_t temp[2] = {0}; // 记载偏移量
 
   // 开启CAN
   HAL_StatusTypeDef Flag = HAL_OK;

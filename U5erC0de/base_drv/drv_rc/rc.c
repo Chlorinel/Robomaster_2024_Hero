@@ -267,8 +267,8 @@ uint32_t is_rc_offline(void) {
       rc_ctrl_data.rc.ch2 >= -RC_CH_VALUE_RANGE &&
       rc_ctrl_data.rc.ch3 <= RC_CH_VALUE_RANGE &&
       rc_ctrl_data.rc.ch3 >= -RC_CH_VALUE_RANGE) {
-    rc_ctrl_data.rc.switch_left = 0;
-    rc_ctrl_data.rc.switch_right = 0;
+    rc_ctrl_data.rc.switch_left = 0x00;
+    rc_ctrl_data.rc.switch_right = 0x00;
     return true;
   } else {
     return 0;

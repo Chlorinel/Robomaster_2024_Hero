@@ -157,7 +157,7 @@ void self_power_ctrl(
     error[0] += 1;
   } else if (isnan(result_ratio) == 1) {
     result_ratio = 0.1f;
-    error[2] += 1;
+    error[1] += 1;
     power_base_ratio_pid.err[0] = 0;
     power_base_ratio_pid.err[1] = 0;
   }

@@ -20,11 +20,12 @@
 #include "main.h"
 #include "can.h"
 #include "dma.h"
-#include "gpio.h"
+#include "rng.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_device.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -96,7 +97,7 @@ void System_Reset(void) {
     set_all_chassis_motor_output();
     set_all_gimbal_motor_output();
   }
-  __set_FAULTMASK(1); // 关闭�???有中�???
+  __set_FAULTMASK(1); // 关闭�????有中�????
   __disable_irq();
   NVIC_SystemReset(); // 复位
 }
@@ -105,28 +106,28 @@ void System_Reset(void) {
  *	@breif 看门狗初始化
  *	@param[1] hiwdg.Instance->KR
  *						键寄存器
- *						当写�?????????0XCCCC就启动看门狗的工作；
- *						当写�?????????0X5555时表示允许访问IWDG_PR和IWDG_RLR寄存器，只有允许访问这两个地�?????????以后，才能改变独立看门狗的预分频值和重装载�?�；
- *						当写�?????????0XAAAA的时候，独立看门狗进行更新，防止产生复位�?????????
+ *						当写�??????????0XCCCC就启动看门狗的工作；
+ *						当写�??????????0X5555时表示允许访问IWDG_PR和IWDG_RLR寄存器，只有允许访问这两个地�??????????以后，才能改变独立看门狗的预分频值和重装载�?�；
+ *						当写�??????????0XAAAA的时候，独立看门狗进行更新，防止产生复位�??????????
  *	@param[2] hiwdg.Instance->PR
  *						预分频寄存器
  *						分频值为4*2^PR
  *	@param[3] hiwdg.Instance->RLR
  *						重装载寄存器
- *						当IWDG的�?�减�?????????0以后，系统复位，IWDG的重装载寄存器的值就会加载到递减计数器中进行重新计数�?????????
- *						当IWDG及时“喂狗�?�，以后，IWDG的重装载寄存器的值也会加载到递减计数器中，使IWDG重新计数�?????????
+ *						当IWDG的�?�减�??????????0以后，系统复位，IWDG的重装载寄存器的值就会加载到递减计数器中进行重新计数�??????????
+ *						当IWDG及时“喂狗�?�，以后，IWDG的重装载寄存器的值也会加载到递减计数器中，使IWDG重新计数�??????????
  *	@param[4] hiwdg.Instance->SR
- *						状�?�寄存器,�?????????
+ *						状�?�寄存器,�??????????
  *	@note[1]:	C板看门狗是接到LSI 32khz,喂狗用时Tout=( (4×2^PR) ×
- *(RLP+1) )/LSI,此处设定频率�?????????400hz
- *						(贴着控制频率容易�?????????直卡�?????????,建议留多点余�?????????)
+ *(RLP+1) )/LSI,此处设定频率�??????????400hz
+ *						(贴着控制频率容易�??????????直卡�??????????,建议留多点余�??????????)
  *	@note[2]:
- *调用MX_IWDG_Init的时候就已经�?????????启看门狗�?????????,为了防止robot_init用时过久疯狗咬人,
- *						请自行在MX_IWDG_Init里加�?????????#if
+ *调用MX_IWDG_Init的时候就已经�??????????启看门狗�??????????,为了防止robot_init用时过久疯狗咬人,
+ *						请自行在MX_IWDG_Init里加�??????????#if
  *0
- *......#endif注释�?????????
+ *......#endif注释�??????????
  *	@note[3]:
- *平常�?????????debug调试时记得关掉看门狗,不然�?????????打断点就会触发看门狗
+ *平常�??????????debug调试时记得关掉看门狗,不然�??????????打断点就会触发看门狗
  */
 bool IS_SYSTEM_RESET = true;
 void watchdog_init(void) {
@@ -178,18 +179,18 @@ void error_show(uint8_t emergency) {
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
-int main(void) {
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick.
-   */
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
   /* USER CODE BEGIN Init */
@@ -219,6 +220,7 @@ int main(void) {
   MX_USART1_UART_Init();
   MX_USART6_UART_Init();
   MX_TIM5_Init();
+  MX_RNG_Init();
   /* USER CODE BEGIN 2 */
 #endif
   MX_GPIO_Init();
@@ -239,9 +241,9 @@ int main(void) {
   //
 
   // init_UI();
-  // init_UI();
+   init_UI();
   referee_recv_dma_init();
-  // 云台初始�??????????(含电机�?�遥控器、板间交互�?�tim6与tim14中断�??????????�??????????)
+  // 云台初始�???????????(含电机�?�遥控器、板间交互�?�tim6与tim14中断�???????????�???????????)
   robot_init();
   HAL_Delay(500);
 
@@ -263,7 +265,7 @@ int main(void) {
     // 更新裁判系统
     update_referee_data_to_BTB();
 
-    // 蜂鸣器警�??????????
+    // 蜂鸣器警�???????????
     //     if (is_the_receiver_offline())
     //       beep(1, 1000, 0.01); // 1s
 
@@ -294,21 +296,22 @@ int main(void) {
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
-void SystemClock_Config(void) {
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-   */
+  */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   /** Initializes the RCC Oscillators according to the specified parameters
-   * in the RCC_OscInitTypeDef structure.
-   */
+  * in the RCC_OscInitTypeDef structure.
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -317,20 +320,22 @@ void SystemClock_Config(void) {
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 7;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
     Error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
-                                RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+  {
     Error_Handler();
   }
 }
@@ -340,10 +345,11 @@ void SystemClock_Config(void) {
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
-void Error_Handler(void) {
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
@@ -352,15 +358,16 @@ void Error_Handler(void) {
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
-void assert_failed(uint8_t *file, uint32_t line) {
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line
      number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,

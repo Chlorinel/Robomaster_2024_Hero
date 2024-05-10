@@ -95,7 +95,7 @@ void robot_init() {
   imu_init();
 
   est_position_filter_init();
-  init_UI();
+ // init_UI();
   // 开启循环
   HAL_TIM_Base_Start_IT(&htim14);
   HAL_TIM_Base_Start_IT(&htim6);

@@ -324,7 +324,8 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
       aim_spin_status = STOP;
       est_x = xc - r1 * cos(yaw);
       est_y = yc - r1 * sin(yaw);
-      est_z = zc;
+       est_z = zc;
+      //est_z = real_z;
       armor_theta_diff = get_delta_ang(yaw, center_theta, 2 * PI);
     }
 
@@ -343,9 +344,9 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
           cos(gimbal_real_state.roll) * shooter_pitch_offset_temp -
           sin(gimbal_real_state.roll) * shooter_yaw_offset_temp;
 
-      distance_xy = sqrtf(est_x * est_x + est_y * est_y);
-
-      if (aim_spin_status = !SPIN_FOLLOW) {
+       distance_xy = sqrtf(est_x * est_x + est_y * est_y);
+//      distance_xy = real_distance;
+      if (aim_spin_status !=SPIN_FOLLOW) {
         *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
       } else {
         *yaw_ang = atan2f(yc, xc) + _shooter_yaw_offset;

@@ -50,12 +50,12 @@ struct power_parameter_t {
 } power_parameter;
 #endif
 
-char cover_text[30] = "COVER:";
-char spin_text[30] = "SPIN:";
-char tank_text[30] = "TANK:";
-char state_text[30] = "CVR X\nNOBUF\nSMALLBUF\nBIGBUF";
+// char cover_text[30] = "COVER:";
+// char spin_text[30] = "SPIN:";
+// char tank_text[30] = "TANK:";
+// char state_text[30] = "CVR X\nNOBUF\nSMALLBUF\nBIGBUF";
 
-ext_client_custom_character_t test_data;
+// ext_client_custom_character_t test_data;
 extern interaction_figure_4_t dynamic_layer_data1;
 extern interaction_figure_4_t dynamic_layer_data2;
 extern interaction_figure_4_t dynamic_layer_data3;
@@ -91,14 +91,15 @@ void init_UI(void) {
             5); // 底盘指示
   Static_UI(2, GRAPHIC_ELLIPSE, COLOR_GREEN, 960, 110, 400, 60,
             4); // 小陀螺指示
-  Static_UI(4, GRAPHIC_LINE, COLOR_PURPLE, 755, 850, 1165, 850, 16); // 血量条
-  // Static_UI(5, GRAPHIC_SQUARE, COLOR_PINK, 0, 950, 1920, 1080,
+  // Static_UI(4, GRAPHIC_LINE, COLOR_PURPLE, 755, 850, 1165, 850, 16); //
+  // 血量条 Static_UI(5, GRAPHIC_SQUARE, COLOR_PINK, 0, 950, 1920, 1080,
   //    200); // 弹仓盖指示
   // send_char(5,375,550,COLOR_GREEN,25,2,"ON");//弹仓盖指示
   Static_UI(6, GRAPHIC_LINE, COLOR_MAIN_RB, 900, 490, 1020, 590,
             8); // 摩擦轮指示
   Static_UI(7, GRAPHIC_SQUARE, COLOR_WHITE, 640, 190, 1280, 210, 2); // 电容框
-  Static_UI(8, GRAPHIC_SQUARE, COLOR_WHITE, 750, 840, 1170, 860, 2); // 血量框
+  // Static_UI(8, GRAPHIC_SQUARE, COLOR_WHITE, 750, 840, 1170, 860, 2); //
+  // 血量框
   Static_UI(20, GRAPHIC_LINE, COLOR_WHITE, 855, 870, 855, 800, 2); // 斩杀线
   // send_char(2,250,650,COLOR_GREEN,25,2,spin_text);//小陀螺指示
   // send_char(22,250,600,COLOR_GREEN,25,2,tank_text);//坦克模式
@@ -131,7 +132,7 @@ float awaw = 0;
 void update_UI(void) { // 静态图层的设置
 
   UI_count++;
-  chassis_state_t chassis_real_state = *get_p_chassis_real_state();
+
   float ang_del = chassis_motors._all_chassis_motors[4].real.abs_angle;
 
   float sin_yaw = sinf(ang_del); // 角度差转换为弧度
@@ -139,7 +140,7 @@ void update_UI(void) { // 静态图层的设置
   awaw = sin_yaw;
   if (UI_count % 3 == 0) // 动态图形，注意：请把动态图形放入0-6的序号中
   {
-    input_HP();
+    // input_HP();
 
     modify(1, 2, COLOR_MAIN_RB, (uint16_t)(1600 - 70 * sin_yaw),
            (uint16_t)(550 + 70 * cos_yaw));
@@ -149,7 +150,7 @@ void update_UI(void) { // 静态图层的设置
                     modify(6,test_status,COLOR_CYAN,0,0);
                     1.序号 2.出现 3.颜色 4.x 5.y
     */
-    send_char(3, 2, 1100, 650, COLOR_GREEN, 25, 2, spin_text); // 小陀螺指示
+   // send_char(3, 2, 1100, 650, COLOR_GREEN, 25, 2, spin_text); // 小陀螺指示
     if (robot.move_mode == _spin_mode) {
       modify(2, 1, COLOR_CYAN, 0, 0);
     } else {
@@ -227,8 +228,8 @@ void update_UI(void) { // 静态图层的设置
       modify(0, 2, COLOR_WHITE,
              645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 200);
 
-    modify(4, 2, COLOR_PURPLE,
-           (uint16_t)CLAMP0((755 + 500 /*show_robot_HP*/), 755 + 600), 850);
+    // modify(4, 2, COLOR_PURPLE,
+    //        (uint16_t)CLAMP0((755 + 500 /*show_robot_HP*/), 755 + 600), 850);
 
     send_7(dynamic_layer_data1); // 勿动
     //		modify(4,2,COLOR_PURPLE,1000+BAR/2+HP_len_ui,875-WIDTH-BAR/2);
@@ -253,8 +254,8 @@ void update_UI(void) { // 静态图层的设置
            (uint16_t)(550 + 70 * cos_yaw));
     modify(0, 1, COLOR_YELLOW,
            645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 250);
-    modify(4, 1, COLOR_PURPLE, (uint16_t)CLAMP0((755 + show_robot_HP), 1920),
-           837);
+    // modify(4, 1, COLOR_PURPLE, (uint16_t)CLAMP0((755 + show_robot_HP), 1920),
+    //        837);
     send_7(dynamic_layer_data1); // 勿动
   }
 }

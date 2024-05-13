@@ -136,7 +136,6 @@ float vyaw_bound = 5.f;
 float choose_speed_vyaw = 0.5;
 float armor_theta_diff = 0;
 
-float bullet_speed_error = 0;
 float center_theta;
 
 float distance_xyz;
@@ -168,7 +167,7 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
     }
 
     // 载入数据
-    bullet_speed_error = 16 - cur_v0;
+
     float yaw = vision_ctrl_data.yaw;
     float r1 = vision_ctrl_data.r1;
     float r2 = vision_ctrl_data.r2;
@@ -324,8 +323,8 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
       aim_spin_status = STOP;
       est_x = xc - r1 * cos(yaw);
       est_y = yc - r1 * sin(yaw);
-       est_z = zc;
-      //est_z = real_z;
+      est_z = zc;
+      // est_z = real_z;
       armor_theta_diff = get_delta_ang(yaw, center_theta, 2 * PI);
     }
 
@@ -344,9 +343,9 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
           cos(gimbal_real_state.roll) * shooter_pitch_offset_temp -
           sin(gimbal_real_state.roll) * shooter_yaw_offset_temp;
 
-       distance_xy = sqrtf(est_x * est_x + est_y * est_y);
-//      distance_xy = real_distance;
-      if (aim_spin_status !=SPIN_FOLLOW) {
+      distance_xy = sqrtf(est_x * est_x + est_y * est_y);
+      //      distance_xy = real_distance;
+      if (aim_spin_status != SPIN_FOLLOW) {
         *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
       } else {
         *yaw_ang = atan2f(yc, xc) + _shooter_yaw_offset;
@@ -413,8 +412,8 @@ float shoot_delta_yaw_angle = 0;
 float shoot_delta_yaw_scale = 0;
 float shoot_delta_pitch_angle = 0;
 float shoot_delta_pitch_scale = 0;
-float shootable_yaw_angle = 0.7;
-float shootable_pitch_angle = 0.1;
+float shootable_yaw_angle = 0.33;
+float shootable_pitch_angle = 0.25;
 
 float shootable_angle_p = 10;
 float shootable_angle_n = 10;

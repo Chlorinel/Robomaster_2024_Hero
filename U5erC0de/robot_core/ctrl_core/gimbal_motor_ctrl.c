@@ -17,7 +17,7 @@ gimbal_motors_t gimbal_motors = {0};
 // float pitch_kpid_vel[3]={1500,0.2,150};
 // float pitch_kpid_pos[3] = {900, 1, 50};
 // float pitch_kpid_vel[3] = {1700, 5, 0};
-float pitch_kpid_pos[3] = {600, 4, 8};
+float pitch_kpid_pos[3] = {770, 8, 8};
 float pitch_kpid_vel[3] = {400, 2, 8};
 kalman1_state i_pitch_filter;
 /**s

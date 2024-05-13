@@ -110,7 +110,7 @@ void update_chassis_real_state(void) {
  */
 bool chassis_lob_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
   chassis_ctrl(expt_delta_yaw, expt_vx, expt_vy, 0);
-	return true;
+  return true;
 }
 
 /**
@@ -242,8 +242,8 @@ bool chassis_spin_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
   float chassis_expt_wz;
 
   // 依据移动来选择
-//  if (chassis_power_lim.weight_of_wz < k_spin) // 0.03;  // 0.01;
-	if(0)
+  //  if (chassis_power_lim.weight_of_wz < k_spin) // 0.03;  // 0.01;
+  if (0)
     chassis_expt_wz = 0;
   // 小陀螺时要x/y需求过大时,则自动切换到坦克模式
 
@@ -328,6 +328,9 @@ bool chassis_disable(float expt_delta_yaw, float expt_vx, float expt_vy) {
  * 期望控制的y方向的变换量,方向逆时针正,将累加到chassis_expt_state上
  */
 float expt_gimbal_yaw_scl, real_gimbal_yaw_scl;
+
+uint8_t is_cap_enable_flag;
+
 
 float omega_yaw_test = 10;
 float A_yaw_test = 10;
@@ -453,9 +456,14 @@ void chassis_ctrl(float expt_delta_yaw, float expt_vx, float expt_vy,
   //     }
   //   }
   // }
-
+  // uint8_t is_cap_enable_flag = 0b01010101;
+   if ((game_robot_status.power_management_chassis_output == 1)) {
+    is_cap_enable_flag =1;
+  } else {
+    is_cap_enable_flag =0;
+  }
   wheel_controller(&chassis_expt_state, &chassis_real_state, &chassis_power_lim,
-                   (game_robot_status.power_management_chassis_output == 1));
+                   is_cap_enable_flag);
 }
 
 ///< other

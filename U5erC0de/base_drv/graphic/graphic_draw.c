@@ -89,7 +89,7 @@ void init_UI(void) {
 
   Static_UI(1, GRAPHIC_LINE, COLOR_MAIN_RB, 1600, 550, 1600, 620,
             5); // 底盘指示
-  Static_UI(2, GRAPHIC_ELLIPSE, COLOR_GREEN, 960, 110, 400, 60,
+  Static_UI(2, GRAPHIC_ELLIPSE, COLOR_GREEN, 960, 110, 20, 20,
             4); // 小陀螺指示
   // Static_UI(4, GRAPHIC_LINE, COLOR_PURPLE, 755, 850, 1165, 850, 16); //
   // 血量条 Static_UI(5, GRAPHIC_SQUARE, COLOR_PINK, 0, 950, 1920, 1080,
@@ -106,10 +106,10 @@ void init_UI(void) {
   // send_char(23,250,550,COLOR_GREEN,25,2,cover_text);//弹仓盖
   Static_UI(12, GRAPHIC_CIRCLE, COLOR_YELLOW, 1600, 550, 70, 0,
             2); // 底盘指示圆
-  Static_UI(9, GRAPHIC_CIRCLE, COLOR_GREEN, 1600, 700, 40, 0, 8); // 遥控器控制
-  Static_UI(
-      10, GRAPHIC_CIRCLE, COLOR_ORANGE, 1600, 700, 40, 0,
-      8); // 图传控制
+  Static_UI(9, GRAPHIC_CIRCLE, COLOR_YELLOW, 1600, 700, 40, 0, 8); // 遥控器控制
+//  Static_UI(
+//      10, GRAPHIC_CIRCLE, COLOR_ORANGE, 1600, 700, 40, 0,
+//      8); // 图传控制
           // Static_UI(10,GRAPHIC_LINE,COLOR_CYAN, 960,110,720,61,2);//斜线2
   // 铅垂线
   Static_UI(11, GRAPHIC_LINE, COLOR_CYAN, 960, 110, 960, 534, 2);
@@ -151,24 +151,17 @@ void update_UI(void) { // 静态图层的设置
                     1.序号 2.出现 3.颜色 4.x 5.y
     */
    // send_char(3, 2, 1100, 650, COLOR_GREEN, 25, 2, spin_text); // 小陀螺指示
-    if (robot.move_mode == _spin_mode) {
+    if (robot.ctrl_mode == 0) {
       modify(2, 1, COLOR_CYAN, 0, 0);
     } else {
       modify(2, 0, COLOR_CYAN, 0, 0);
     }
     if (target_has_found == 1) {
-      modify(19, 2, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
+      modify(19, 0, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
     } else {
       modify(19, 1, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
     }
-    if (robot.ctrl_mode == 0) {
-      modify(9, 1, COLOR_PINK, 0, 0);
-      modify(10, 0, COLOR_PINK, 0, 0);
-    } else {
-      modify(9, 0, COLOR_PINK, 0, 0);
-      modify(10, 1, COLOR_PINK, 0, 0);
-      //			}
-    }
+
     // modify(1,2,COLOR_PURPLE,1200-BAR/2-2*cap_data_ui,450-WIDTH+BAR/2);
     /* modify(1,2,COLOR_PURPLE,1200-BAR/2-2*joint_100[1],450-WIDTH+BAR/2);
     modify(2,2,COLOR_PURPLE,1400-BAR/2-2*joint_100[2],450-WIDTH+BAR/2);

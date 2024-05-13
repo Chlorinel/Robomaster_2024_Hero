@@ -55,8 +55,8 @@
 #define SPINNING_BASE_K 8.0f
 #define SPINNING_REDUCE_K 3.0f
 
-#define SELF_POWER_CTRL 1
-#define CAP_POWER_CTRL 0
+#define SELF_POWER_CTRL 0
+#define CAP_POWER_CTRL 1
 
 #define APB1_freq 84000000.0f
 #define PI (3.14159265358979323846f)

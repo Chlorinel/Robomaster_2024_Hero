@@ -95,7 +95,7 @@ void robot_init() {
   imu_init();
 
   est_position_filter_init();
- // init_UI();
+  // init_UI();
   // 开启循环
   HAL_TIM_Base_Start_IT(&htim14);
   HAL_TIM_Base_Start_IT(&htim6);
@@ -216,12 +216,16 @@ void gimbal_get_ctrl_way(void) {
     }
   }
 
-  if (switch_to_mouse_ctrl == true ||( robot.ctrl_mode == 1&&robot.robot_flag.vt_config_flag == 0)) { // 键鼠控制
+  if (switch_to_mouse_ctrl == true ||
+      (robot.ctrl_mode == 1 &&
+       robot.robot_flag.vt_config_flag == 0)) { // 键鼠控制
     robot.tank_speed += Mouse_z / (fs_tim_freq * 3);
     if (robot.tank_speed <= 0.1) {
       robot.tank_speed = 0.1;
-    }if(robot.tank_speed>=4)
-		{robot.tank_speed=4;}
+    }
+    if (robot.tank_speed >= 4) {
+      robot.tank_speed = 4;
+    }
 
     // 模式选择
     if (IS_KEY_PRESS(KEY_Q) == true && IS_KEY_LAST_PRESS(KEY_Q) != true)
@@ -427,9 +431,7 @@ void gimbal_get_ctrl_way(void) {
       if (rc_right_switch == rc_sw_top) {
         robot.move_mode = _tank_mode;
         robot.is_imu_ctrl_yaw = 1;
-
         robot.weapon.ctrl_mode = _vision_ctrl;
-
         robot.robot_flag.gimbal_fuck_mode_flag = 0;
         robot.robot_flag.chassis_super_cap_enable_flag = 0;
 

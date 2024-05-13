@@ -59,6 +59,8 @@ extern eular_t _imu_eular;
 
 float est_x, est_y, est_z, est_yaw, distance_xy;
 // 从弹丸飞出,到预测击打目标装甲板的位置差
+float center_est_x, center_est_y, center_distance_xy;
+// 中心火控瞄准的位置差
 float best_attack_x, best_attack_y, best_attack_z, best_attack_yaw;
 // 从发出开火指令,到预测击打目标装甲板的位置差
 
@@ -179,6 +181,7 @@ struct {
   uint32_t tick;
   float pitch_ang;
   float yaw_ang;
+  float shoot_yaw_ang;
 } vision_base_mode_data[num111];
 
 float base_mode_aim_yaw, base_mode_aim_pitch;
@@ -189,7 +192,8 @@ float base_mode_pitch_offset = 0.0484;
 float base_mode_target_z0_offset = 0;   // 观测值比实际低了约0.2m
 float outpost_top_armor_offset = 0.312; // 观测值比实际低了约0.2m
 
-uint8_t get_vision_ctrl_base_mode(float *pitch_ang, float *yaw_ang, float dt) {
+uint8_t get_vision_ctrl_base_mode(float *pitch_ang, float *yaw_ang,
+                                  float *shooter_yaw_ang, float dt) {
   extern bool base_mode_enable; // 抽象吧
   static uint8_t i = 0;
   if (base_mode_enable == false) {
@@ -202,8 +206,9 @@ uint8_t get_vision_ctrl_base_mode(float *pitch_ang, float *yaw_ang, float dt) {
     i = 0;
   if (vision_ctrl_data.target_found == true) { // 有收到零琐的数据帧
     vision_base_mode_data[i].tick = HAL_GetTick();
-    get_vision_ctrl(&vision_base_mode_data[i].pitch_ang,
-                    &vision_base_mode_data[i].yaw_ang, 1.f / hs_tim_freq);
+    get_vision_ctrl(
+        &vision_base_mode_data[i].pitch_ang, &vision_base_mode_data[i].yaw_ang,
+        &vision_base_mode_data[i].shoot_yaw_ang, 1.f / hs_tim_freq, 0);
     i++;
   }
 
@@ -232,6 +237,7 @@ uint8_t get_vision_ctrl_base_mode(float *pitch_ang, float *yaw_ang, float dt) {
           range_map(base_sum_pitch / identify_base_cnt, -PI, PI) -
           shooter_pitch_offset + base_mode_pitch_offset;
       *yaw_ang = base_mode_aim_yaw;
+      *shooter_yaw_ang = base_mode_aim_yaw;
       *pitch_ang = base_mode_aim_pitch;
       had_find_base = true;
       return VISION_OK;
@@ -245,6 +251,7 @@ uint8_t get_vision_ctrl_base_mode(float *pitch_ang, float *yaw_ang, float dt) {
     if (HAL_GetTick() - vision_base_mode_data[num111 - 1].tick <
         MAX_track_time) { // 2秒内连续发现有基地,就开轰
       *yaw_ang = base_mode_aim_yaw;
+      *shooter_yaw_ang = base_mode_aim_yaw;
       *pitch_ang = base_mode_aim_pitch;
       return VISION_OK;
     } else { // 超时清零

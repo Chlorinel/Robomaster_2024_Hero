@@ -13,6 +13,7 @@ typedef struct {
   float pitch;
   float yaw;
   float roll;
+  float shooter_yaw; // 期望视觉瞄准yaw
 } gimbal_state_t;
 
 #define PITCH_SOFT_START_ANGLE (PI / PITCH_SOFT_START_MAX_TIME / fs_tim_freq)

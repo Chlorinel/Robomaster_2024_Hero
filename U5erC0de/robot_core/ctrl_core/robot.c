@@ -226,7 +226,8 @@ void gimbal_get_ctrl_way(void) {
     if (robot.tank_speed >= 4) {
       robot.tank_speed = 4;
     }
-
+    if (IS_KEY_PRESS(KEY_G) == true && IS_KEY_LAST_PRESS(KEY_G) != true)
+      robot.is_center_fire = !robot.is_center_fire;
     // 模式选择
     if (IS_KEY_PRESS(KEY_Q) == true && IS_KEY_LAST_PRESS(KEY_Q) != true)
       robot.move_mode = _tank_mode;
@@ -516,7 +517,8 @@ void robot_gimbal_tim_loop(void) {
   if (attack_target_type != base_mid_armor) {
     // 仅当看到过装甲板且找到前哨站
     robot.weapon._is_vision_ok = get_vision_ctrl(
-        &vision_ctrl_state.pitch, &vision_ctrl_state.yaw, 1.f / fs_tim_freq);
+        &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
+        &vision_ctrl_data.shooter_yaw, 1.f / fs_tim_freq, robot.is_center_fire);
   } else {
     refresh_base_mode(false);
     robot.weapon._is_vision_ok = get_vision_ctrl_base_mode(

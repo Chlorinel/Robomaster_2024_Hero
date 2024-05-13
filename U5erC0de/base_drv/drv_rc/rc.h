@@ -37,7 +37,7 @@ typedef enum {
 
 #define KEY_R ((uint16_t)0x01 << 8)  // 一键重启
 #define KEY_F ((uint16_t)0x01 << 9)  // FUCk模式占用
-#define KEY_G ((uint16_t)0x01 << 10) // 倍镜占用
+#define KEY_G ((uint16_t)0x01 << 10) // 中心火控占用
 #define KEY_Z                                                                  \
   ((uint16_t)0x01 << 11)             // 小陀螺占用				//配置正向移动
 #define KEY_X ((uint16_t)0x01 << 12) // 吊射模式占用

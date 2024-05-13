@@ -64,6 +64,7 @@ typedef struct {
   uint32_t timestep;
   uint8_t is_bule_or_red; // bule:1   red:0  裁判系统：3
   bool is_imu_ctrl_yaw;
+  bool is_center_fire;
   float base_speed;
   float tank_speed;
   float vx, vy, wz;

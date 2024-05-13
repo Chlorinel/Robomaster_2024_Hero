@@ -146,10 +146,13 @@ float gimbal_follow_theta;
 extern float shooter_yaw_offset, shooter_pitch_offset;
 
 target_spec_t target;
+target_spec_t center_target;
+ballistic_sol_t center_solution;
 ballistic_sol_t solution;
 float r_freq_vision = 0;
 float shooter_yaw_offset_temp, shooter_pitch_offset_temp;
-uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
+uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
+                        float *shooter_yaw_ang, float dt, bool is_center_fire) {
   if (vision_ctrl_data.target_found) {
     float x = vision_ctrl_data.x;
     get_data_refresh_freq(x, r_freq_vision);
@@ -183,7 +186,9 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
     // uint8_t id_num = vision_ctrl_data.id_num;
     extern float predict_time;
     extern float est_x, est_y, est_z, est_yaw, distance_xy;
-    extern float best_attack_x, best_attack_y, best_attack_z, best_attack_yaw;
+    float center_est_x, center_est_y, center_distance_xy;
+    extern float extern float best_attack_x, best_attack_y, best_attack_z,
+        best_attack_yaw;
     // 前哨站特化
     if (attack_target_type == outpost_spin_armor ||
         attack_target_type == outpost_top_armor) {
@@ -299,7 +304,9 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
             aim_spin_status = SPIN_FOLLOW;
             // Robot state to armor
             est_x = xc - rd_filter.fltr_val * cos(armor_yaw);
+            center_est_x = xc - rd_filter.fltr_val;
             est_y = yc - rd_filter.fltr_val * sin(armor_yaw);
+            center_est_y = yc;
             est_z = _est_z;
           } else { // 非半径较小的装甲板,就不打了
             aim_spin_status = SPIN_WAIT;
@@ -344,11 +351,16 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
           sin(gimbal_real_state.roll) * shooter_yaw_offset_temp;
 
       distance_xy = sqrtf(est_x * est_x + est_y * est_y);
+      center_distance_xy =
+          sqrtf(center_est_x * center_est_x + center_est_y * center_est_y);
+
       //      distance_xy = real_distance;
-      if (aim_spin_status != SPIN_FOLLOW) {
+      if (aim_spin_status = STOP) {
         *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
+        *shooter_yaw_ang = *yaw_ang;
       } else {
         *yaw_ang = atan2f(yc, xc) + _shooter_yaw_offset;
+        *shooter_yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
       }
 
       extern gimbal_state_t gimbal_real_state;
@@ -356,16 +368,33 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt) {
       target.z0 = est_z - 0.1f * sin(-gimbal_real_state.pitch) *
                               cos(gimbal_real_state.roll);
 
-      projectile_solve(cur_v0, &target, &solution);
-
-      if (solution.solution_num > 0) {
-        if (solution.ang_solution1 < solution.ang_solution2) {
-          *pitch_ang = -solution.ang_solution1 + _shooter_pitch_offset;
+      center_target.x0 =
+          center_distance_xy - 0.1f * cos(gimbal_real_state.pitch);
+      center_target.z0 = est_z - 0.1f * sin(-gimbal_real_state.pitch) *
+                                     cos(gimbal_real_state.roll);
+      if (is_center_fire) {
+        projectile_solve(cur_v0, &center_target, &center_solution);
+        if (center_solution.solution_num > 0) {
+          if (center_solution.ang_solution1 < center_solution.ang_solution2) {
+            *pitch_ang = -solution.ang_solution1 + _shooter_pitch_offset;
+          } else {
+            *pitch_ang = -solution.ang_solution2 + _shooter_pitch_offset;
+          }
         } else {
-          *pitch_ang = -solution.ang_solution2 + _shooter_pitch_offset;
+          *pitch_ang = atan2f(est_z, center_distance_xy);
         }
       } else {
-        *pitch_ang = atan2f(est_z, distance_xy);
+        projectile_solve(cur_v0, &target, &solution);
+
+        if (solution.solution_num > 0) {
+          if (solution.ang_solution1 < solution.ang_solution2) {
+            *pitch_ang = -solution.ang_solution1 + _shooter_pitch_offset;
+          } else {
+            *pitch_ang = -solution.ang_solution2 + _shooter_pitch_offset;
+          }
+        } else {
+          *pitch_ang = atan2f(est_z, distance_xy);
+        }
       }
     }
     if (aim_spin_status == SPIN_WAIT) {

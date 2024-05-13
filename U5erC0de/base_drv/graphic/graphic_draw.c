@@ -90,29 +90,24 @@ void init_UI(void) {
   Static_UI(1, GRAPHIC_LINE, COLOR_MAIN_RB, 1600, 550, 1600, 620,
             5); // 底盘指示
   Static_UI(2, GRAPHIC_ELLIPSE, COLOR_GREEN, 960, 110, 20, 20,
-            4); // 小陀螺指示
-  // Static_UI(4, GRAPHIC_LINE, COLOR_PURPLE, 755, 850, 1165, 850, 16); //
-  // 血量条 Static_UI(5, GRAPHIC_SQUARE, COLOR_PINK, 0, 950, 1920, 1080,
-  //    200); // 弹仓盖指示
-  // send_char(5,375,550,COLOR_GREEN,25,2,"ON");//弹仓盖指示
+            4); // 控制方式ui
+  Static_UI(3, GRAPHIC_ELLIPSE, COLOR_YELLOW, 1600, 700, 20, 20,
+            4); // 中心火控控制
+  Static_UI(4, GRAPHIC_SQUARE, COLOR_ORANGE, fov_point[0], fov_point[1],
+            fov_point[2], fov_point[3], 2);
+
   Static_UI(6, GRAPHIC_LINE, COLOR_MAIN_RB, 900, 490, 1020, 590,
             8); // 摩擦轮指示
   Static_UI(7, GRAPHIC_SQUARE, COLOR_WHITE, 640, 190, 1280, 210, 2); // 电容框
-  // Static_UI(8, GRAPHIC_SQUARE, COLOR_WHITE, 750, 840, 1170, 860, 2); //
-  // 血量框
-  Static_UI(20, GRAPHIC_LINE, COLOR_WHITE, 855, 870, 855, 800, 2); // 斩杀线
-  // send_char(2,250,650,COLOR_GREEN,25,2,spin_text);//小陀螺指示
-  // send_char(22,250,600,COLOR_GREEN,25,2,tank_text);//坦克模式
-  // send_char(23,250,550,COLOR_GREEN,25,2,cover_text);//弹仓盖
+  Static_UI(8, GRAPHIC_LINE, COLOR_MAIN_RB, 930, 453, 970, 453,
+            2); // 10m前哨站顶部
+  Static_UI(8, GRAPHIC_LINE, COLOR_MAIN_RB, 920, 443, 980, 443,
+            2); // 未定横线
   Static_UI(12, GRAPHIC_CIRCLE, COLOR_YELLOW, 1600, 550, 70, 0,
             2); // 底盘指示圆
-  Static_UI(9, GRAPHIC_CIRCLE, COLOR_YELLOW, 1600, 700, 40, 0, 8); // 遥控器控制
-//  Static_UI(
-//      10, GRAPHIC_CIRCLE, COLOR_ORANGE, 1600, 700, 40, 0,
-//      8); // 图传控制
-          // Static_UI(10,GRAPHIC_LINE,COLOR_CYAN, 960,110,720,61,2);//斜线2
+  // Static_UI(10,GRAPHIC_LINE,COLOR_CYAN, 960,110,720,61,2);//斜线2
   // 铅垂线
-  Static_UI(11, GRAPHIC_LINE, COLOR_CYAN, 960, 110, 960, 534, 2);
+  Static_UI(11, GRAPHIC_LINE, COLOR_CYAN, 950, 110, 950, 900, 2);
   // 瞄准刻度线
   //		Static_UI(12,GRAPHIC_LINE,COLOR_CYAN,860,300,1060,300,2);
   //		Static_UI(13,GRAPHIC_LINE,COLOR_CYAN,885,350,1035,350,2);
@@ -123,11 +118,9 @@ void init_UI(void) {
   Static_UI(17, GRAPHIC_LINE, COLOR_GREEN, 580, 0, 730, 450, 4);
   Static_UI(18, GRAPHIC_LINE, COLOR_GREEN, 1280, 0, 1150, 450, 4);
   // 视场角
-  Static_UI(19, GRAPHIC_SQUARE, COLOR_ORANGE, fov_point[0], fov_point[1],
-            fov_point[2], fov_point[3], 2);
+
   // test_char();
 }
-float awaw = 0;
 
 void update_UI(void) { // 静态图层的设置
 
@@ -137,7 +130,7 @@ void update_UI(void) { // 静态图层的设置
 
   float sin_yaw = sinf(ang_del); // 角度差转换为弧度
   float cos_yaw = cosf(ang_del);
-  awaw = sin_yaw;
+
   if (UI_count % 3 == 0) // 动态图形，注意：请把动态图形放入0-6的序号中
   {
     // input_HP();
@@ -150,63 +143,22 @@ void update_UI(void) { // 静态图层的设置
                     modify(6,test_status,COLOR_CYAN,0,0);
                     1.序号 2.出现 3.颜色 4.x 5.y
     */
-   // send_char(3, 2, 1100, 650, COLOR_GREEN, 25, 2, spin_text); // 小陀螺指示
+    // send_char(3, 2, 1100, 650, COLOR_GREEN, 25, 2, spin_text); // 小陀螺指示
     if (robot.ctrl_mode == 0) {
       modify(2, 1, COLOR_CYAN, 0, 0);
     } else {
       modify(2, 0, COLOR_CYAN, 0, 0);
     }
-    if (target_has_found == 1) {
-      modify(19, 0, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
+    if (robot.is_center_fire == 0) {
+      modify(3, 1, COLOR_CYAN, 0, 0);
     } else {
-      modify(19, 1, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
+      modify(3, 0, COLOR_CYAN, 0, 0);
     }
-
-    // modify(1,2,COLOR_PURPLE,1200-BAR/2-2*cap_data_ui,450-WIDTH+BAR/2);
-    /* modify(1,2,COLOR_PURPLE,1200-BAR/2-2*joint_100[1],450-WIDTH+BAR/2);
-    modify(2,2,COLOR_PURPLE,1400-BAR/2-2*joint_100[2],450-WIDTH+BAR/2);
-    modify(3,2,COLOR_PURPLE,1300-BAR/2-2*joint_100[3],400-WIDTH+BAR/2);
-    modify(4,2,COLOR_PINK,1500,450+pump_num*300); */
-
-    //		send_int(4,1300,300,COLOR_CYAN,40,4,(int)joint_draw[4]*100);
-    //		send_int(5,1300,250,COLOR_CYAN,40,4,(int)joint_draw[5]*100);
-    //		send_int(6,1300,200,COLOR_CYAN,40,4,(int)joint_draw[6]*100);
-
-    /*  char_data.interaction_figure.figure_name[2] = 0x24;
-     char_data.interaction_figure.start_x = 560;
-     char_data.interaction_figure.start_y = 200;
-     char_data.interaction_figure.details_a = 20;
-     char_data.interaction_figure.details_b = strlen(spin_text);
-     memset(char_data.data, 0, 30);
-     memcpy(char_data.data, fric_text, strlen(spin_text));
-     total_len = fill_tx_buffer((uint8_t *)&char_data, sizeof(char_data));
-     UI_UART_SEND(&UI_HUART, tx_buffer, total_len); */
-    //		uint16_t line23_end[4];
-    //
-    //		if(chassis_spin_state == SPINNING)
-    //		{
-    //			if(spin_direction == (-1)){
-    //				line23_end[0] = 300;
-    //				line23_end[1] = 1320;
-    //				line23_end[2] = 400;
-    //				line23_end[3] = 640;
-    //			}else{
-    //				line23_end[0] = 600;
-    //				line23_end[1] = 1620;
-    //				line23_end[2] = 640;
-    //				line23_end[3] = 400;
-    //			}
-    //		}else if(battle_45degreee){
-    //			line23_end[0] = 640;
-    //			line23_end[1] = 1280;
-    //			line23_end[2] = 640;
-    //			line23_end[3] = 640;
-    //		}else{
-    //			line23_end[0] = 600;
-    //			line23_end[1] = 1320;
-    //			line23_end[2] = 640;
-    //			line23_end[3] = 640;
-    //		}
+    if (target_has_found == 1) {
+      modify(4, 0, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
+    } else {
+      modify(4, 1, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
+    }
 
     if (shooter_debug.is_ready_to_fire) {
       modify(6, 0, COLOR_MAIN_RB, 0, 0);

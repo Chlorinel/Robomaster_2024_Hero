@@ -48,12 +48,7 @@
 #define MOTOR_FLTRNUM 0
 #define FIRL_MOTOR_FLTRNUM (MOTOR_FLTRNUM + 4)
 
-#define MAX_V 0.8f
-#define SOFT_K 1f
-#define MAX_V1 0.8f
-#define SPINNING_CYCLE_K 4.5f
-#define SPINNING_BASE_K 8.0f
-#define SPINNING_REDUCE_K 3.0f
+#define MAX_V 6.0f
 
 #define SELF_POWER_CTRL 0
 #define CAP_POWER_CTRL 1

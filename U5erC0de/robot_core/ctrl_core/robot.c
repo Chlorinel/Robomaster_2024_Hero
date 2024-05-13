@@ -223,9 +223,7 @@ void gimbal_get_ctrl_way(void) {
     if (robot.tank_speed <= 0.1) {
       robot.tank_speed = 0.1;
     }
-    if (robot.tank_speed >= 4) {
-      robot.tank_speed = 4;
-    }
+
     if (IS_KEY_PRESS(KEY_G) == true && IS_KEY_LAST_PRESS(KEY_G) != true)
       robot.is_center_fire = !robot.is_center_fire;
     // 模式选择
@@ -378,10 +376,13 @@ void gimbal_get_ctrl_way(void) {
       robot.robot_flag.gimbal_fuck_mode_flag = 0;
     }
     // 超级电容
-    if (IS_KEY_PRESS(KEY_SHIFT) == true)
+    if (IS_KEY_PRESS(KEY_SHIFT) == true) {
       robot.robot_flag.chassis_super_cap_enable_flag = 1;
-    else
+
+    } else {
+
       robot.robot_flag.chassis_super_cap_enable_flag = 0;
+    }
   } else if (switch_to_config_mode ||
              (robot.ctrl_mode == 1 &&
               robot.robot_flag.vt_config_flag == 1)) { // 配置模式
@@ -419,7 +420,6 @@ void gimbal_get_ctrl_way(void) {
     if (robot.is_bule_or_red == 3) {
       robot.is_bule_or_red = 0;
     }
-
   } else if (rc_left_switch != rc_sw_top &&
              robot.ctrl_mode == 0) { // 遥控器控制
     // 模式选择
@@ -467,21 +467,15 @@ void gimbal_get_ctrl_way(void) {
     robot_gimbal_power_off;
     robot_chassis_power_off;
   }
-
-  //  if (referee_info.shooter_id1_42mm_speed_limit >= 16) {
-  //    CLAMP(robot.weapon.expt_v_shooter, Gimbal_shooter_level4,
-  //          Gimbal_shooter_level5);
-  //    bot = (Gimbal_shooter_level4 - Gimbal_shooter_level4) / k_friction;
-  //    top = (Gimbal_shooter_level5 - Gimbal_shooter_level4) / k_friction;
-  //  } else {
-  //    CLAMP(robot.weapon.expt_v_shooter, Gimbal_shooter_level1,
-  //          Gimbal_shooter_level3);
-  //    bot = (Gimbal_shooter_level1 - Gimbal_shooter_level4) / k_friction;
-  //    top = (Gimbal_shooter_level3 - Gimbal_shooter_level4) / k_friction;
-  //  }
-  // CLAMP(sigma_z, bot, top);
-  // chassis_info.shooter_ref_vel = (float)(sigma_z - bot) / (top - bot);
-  //  robot.shooter_ref_vel = (float)(sigma_z - bot) / (top - bot);
+  if (robot.robot_flag.chassis_super_cap_enable_flag) {
+    if (robot.tank_speed > MAX_V) {
+      robot.base_speed = robot.tank_speed;
+    } else {
+      robot.base_speed = MAX_V;
+    }
+  } else {
+    robot.base_speed = robot.tank_speed;
+  }
 }
 
 void chassis_get_ctrl_way(void) {
@@ -516,13 +510,15 @@ void robot_gimbal_tim_loop(void) {
   extern attack_target_type_t attack_target_type;
   if (attack_target_type != base_mid_armor) {
     // 仅当看到过装甲板且找到前哨站
-    robot.weapon._is_vision_ok = get_vision_ctrl(
-        &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
-        &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq, robot.is_center_fire);
+    robot.weapon._is_vision_ok =
+        get_vision_ctrl(&vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
+                        &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq,
+                        robot.is_center_fire);
   } else {
     refresh_base_mode(false);
     robot.weapon._is_vision_ok = get_vision_ctrl_base_mode(
-        &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,&vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq);
+        &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
+        &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq);
   }
   get_vision_suggest_fire(&gimbal_expt_state, &gimbal_real_state);
   if (robot.weapon._is_vision_ok == VISION_OK)
@@ -654,11 +650,7 @@ void robot_chassis_tim_loop(void) {
 
   // update_chassis_real_state();
   chassis_get_ctrl_way();
-  if (robot.robot_flag.chassis_super_cap_enable_flag == 1) {
-    robot.base_speed = 4;
-  } else {
-    robot.base_speed = robot.tank_speed;
-  }
+
   if (robot.chassis_mode(robot.expt_delta_yaw, robot.vx, robot.vy) == true)
     robot.chassis_curr_state = chassis_power_on;
   else

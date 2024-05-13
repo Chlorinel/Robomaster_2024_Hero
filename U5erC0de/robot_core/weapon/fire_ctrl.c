@@ -186,9 +186,8 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
     // uint8_t id_num = vision_ctrl_data.id_num;
     extern float predict_time;
     extern float est_x, est_y, est_z, est_yaw, distance_xy;
-    float center_est_x, center_est_y, center_distance_xy;
-    extern float extern float best_attack_x, best_attack_y, best_attack_z,
-        best_attack_yaw;
+    extern float center_est_x, center_est_y, center_distance_xy;
+    extern float best_attack_x, best_attack_y, best_attack_z, best_attack_yaw;
     // 前哨站特化
     if (attack_target_type == outpost_spin_armor ||
         attack_target_type == outpost_top_armor) {
@@ -355,14 +354,24 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
           sqrtf(center_est_x * center_est_x + center_est_y * center_est_y);
 
       //      distance_xy = real_distance;
-      if (aim_spin_status = STOP) {
-        *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
-        *shooter_yaw_ang = *yaw_ang;
+      if (is_center_fire) {
+        if (aim_spin_status == STOP) {
+          *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
+          *shooter_yaw_ang = *yaw_ang;
+        } else {
+          *yaw_ang = atan2f(yc, xc) + _shooter_yaw_offset;
+          *shooter_yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
+        }
       } else {
-        *yaw_ang = atan2f(yc, xc) + _shooter_yaw_offset;
-        *shooter_yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
+        if (aim_spin_status = !SPIN_FOLLOW) {
+          *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
+          *shooter_yaw_ang = *yaw_ang;
+        } else {
+          *yaw_ang = atan2f(yc, xc) + _shooter_yaw_offset;
+          //*shooter_yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
+          *shooter_yaw_ang = *yaw_ang;
+        }
       }
-
       extern gimbal_state_t gimbal_real_state;
       target.x0 = distance_xy - 0.1f * cos(gimbal_real_state.pitch);
       target.z0 = est_z - 0.1f * sin(-gimbal_real_state.pitch) *
@@ -460,7 +469,8 @@ float yaw_lll = 0;
 
 void get_vision_suggest_fire(gimbal_state_t *gimbal_expt_state,
                              gimbal_state_t *gimbal_real_state) {
-  float yaw_ang_ref = gimbal_expt_state->yaw;
+
+  float yaw_ang_ref = gimbal_expt_state->shooter_yaw;
   float yaw_ang_cur = gimbal_real_state->yaw;
   float pitch_ang_ref = gimbal_expt_state->pitch;
   float pitch_ang_cur = gimbal_real_state->pitch;

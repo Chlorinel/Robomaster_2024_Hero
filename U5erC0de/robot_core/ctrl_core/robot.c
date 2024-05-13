@@ -518,11 +518,11 @@ void robot_gimbal_tim_loop(void) {
     // 仅当看到过装甲板且找到前哨站
     robot.weapon._is_vision_ok = get_vision_ctrl(
         &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
-        &vision_ctrl_data.shooter_yaw, 1.f / fs_tim_freq, robot.is_center_fire);
+        &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq, robot.is_center_fire);
   } else {
     refresh_base_mode(false);
     robot.weapon._is_vision_ok = get_vision_ctrl_base_mode(
-        &vision_ctrl_state.pitch, &vision_ctrl_state.yaw, 1.f / fs_tim_freq);
+        &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,&vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq);
   }
   get_vision_suggest_fire(&gimbal_expt_state, &gimbal_real_state);
   if (robot.weapon._is_vision_ok == VISION_OK)

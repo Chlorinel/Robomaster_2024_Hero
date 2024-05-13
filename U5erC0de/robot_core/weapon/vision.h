@@ -23,7 +23,7 @@ typedef __packed struct {
   // uint8_t exposure_time : 2;
   uint8_t is_play : 1;
   bool reset_lost : 1;
-  uint8_t reserved :2;
+  uint8_t reserved : 2;
 
   float roll;
   float pitch;
@@ -103,7 +103,9 @@ void inc_vision_rx_lost(void);
 void get_vision_aim_mode(void);
 void get_vision_suggest_fire(gimbal_state_t *gimbal_expt_state,
                              gimbal_state_t *gimbal_real_state);
-uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang, float dt);
+uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
+                        float *shooter_yaw_ang, float dt, bool is_center_fire);
 void refresh_base_mode(bool force_clean_base_mode_flag);
-uint8_t get_vision_ctrl_base_mode(float *pitch_ang, float *yaw_ang, float dt);
+uint8_t get_vision_ctrl_base_mode(float *pitch_ang, float *yaw_ang,
+                                  float *shooter_yaw_ang, float dt);
 #endif

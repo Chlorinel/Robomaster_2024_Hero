@@ -48,7 +48,7 @@
 #define MOTOR_FLTRNUM 0
 #define FIRL_MOTOR_FLTRNUM (MOTOR_FLTRNUM + 4)
 
-#define MAX_V 6.0f
+#define MAX_V 2.8f
 
 #define SELF_POWER_CTRL 0
 #define CAP_POWER_CTRL 1

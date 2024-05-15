@@ -3,6 +3,7 @@
 #include "./algorithm/util.h"
 #include "./algorithm/zero_new_bee_filter.h"
 #include "./robot_core/ctrl_core/robot.h"
+#include <stdint.h>
 
 #include gimbal_module_core_h
 #include "./robot_core/interface/interface_BTB.h"
@@ -330,7 +331,8 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       est_x = xc - r1 * cos(yaw);
       est_y = yc - r1 * sin(yaw);
       est_z = zc;
-      // est_z = real_z;
+
+      //	 est_z = real_z;
       armor_theta_diff = get_delta_ang(yaw, center_theta, 2 * PI);
     }
 
@@ -353,7 +355,7 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       center_distance_xy =
           sqrtf(center_est_x * center_est_x + center_est_y * center_est_y);
 
-      //      distance_xy = real_distance;
+      //  distance_xy = real_distance;
       if (is_center_fire) {
         if (aim_spin_status == STOP) {
           *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
@@ -362,7 +364,7 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
           *yaw_ang = atan2f(yc, xc) + _shooter_yaw_offset;
           *shooter_yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
         }
-      } else {
+      } else { //
         if (aim_spin_status = !SPIN_FOLLOW) {
           *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
           *shooter_yaw_ang = *yaw_ang;
@@ -466,7 +468,6 @@ float outpost_armor_v_error = 0;
 float outpost_armor_v_error_thershold = 0.1;
 float yaw_lllllll = 0;
 float yaw_lll = 0;
-
 void get_vision_suggest_fire(gimbal_state_t *gimbal_expt_state,
                              gimbal_state_t *gimbal_real_state) {
 

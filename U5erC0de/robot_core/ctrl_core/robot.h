@@ -67,6 +67,8 @@ typedef struct {
   bool is_center_fire;
   float base_speed;
   float tank_speed;
+  float spin_speed;
+  bool spin_dir;
   float vx, vy, wz;
   float v_yaw, v_pitch;
 
@@ -76,9 +78,6 @@ typedef struct {
   // 为云台期望移动的角度差,右手系
   float yaw_imu_gx;
   // flt	// 为云台imu读取的yaw速度
-  float shooter_ref_vel;
-
-  float yaw_dir; // yaw指向的方向,反转用
 
   enum {            // 运动模式
     _tank_mode = 0, // 坦克模式,头动底盘不跟头

@@ -7,7 +7,8 @@
     "settings": {
         "files.associations": {
             "gimbal_motor_ctrl.h": "c",
-            "referee_conf.h": "c"
+            "referee_conf.h": "c",
+            "robot.h": "c"
         },
         "stm32-for-vscode.openOCDPath": false,
         "stm32-for-vscode.makePath": false,

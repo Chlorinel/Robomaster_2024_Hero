@@ -39,7 +39,7 @@ uint8_t contral_conut = 0;
 robot_ctrl_t robot = {
     .ctrl_mode = 0,
     .weapon.expt_front_v_shooter = 19,
-    .weapon.expt_back_v_shooter = 18.6, // gen2:18.6 //白：17.43
+    .weapon.expt_back_v_shooter = 17.43, // gen2:18.6 //白：17.43
     .weapon.real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.last_real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.ctrl_mode = _manual_ctrl,
@@ -105,6 +105,7 @@ void robot_init() {
   robot.is_bule_or_red = 2;
   robot.base_speed = 1;
   robot.tank_speed = 1;
+  robot.spin_speed = 1.5;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -219,13 +220,24 @@ void gimbal_get_ctrl_way(void) {
   if (switch_to_mouse_ctrl == true ||
       (robot.ctrl_mode == 1 &&
        robot.robot_flag.vt_config_flag == 0)) { // 键鼠控制
-    robot.tank_speed += Mouse_z / (fs_tim_freq * 3);
-    if (robot.tank_speed <= 0.1) {
-      robot.tank_speed = 0.1;
+    if (robot.move_mode != _spin_mode) {
+      robot.tank_speed += Mouse_z / (fs_tim_freq * 4);
+      if (robot.tank_speed <= 0.1) {
+        robot.tank_speed = 0.1;
+      }
+      if (robot.tank_speed > 3.5) {
+        robot.tank_speed = 3.5;
+      }
+    } else if (robot.move_mode == _spin_mode) {
+      robot.spin_speed += Mouse_z / (fs_tim_freq * 4);
+      if (robot.spin_speed <= 0.1) {
+        robot.spin_speed = 0.1;
+      }
+      if (robot.spin_speed > 2) {
+        robot.spin_speed = 2;
+      }
     }
 
-    if (IS_KEY_PRESS(KEY_G) == true && IS_KEY_LAST_PRESS(KEY_G) != true)
-      robot.is_center_fire = !robot.is_center_fire;
     // 模式选择
     if (IS_KEY_PRESS(KEY_Q) == true && IS_KEY_LAST_PRESS(KEY_Q) != true)
       robot.move_mode = _tank_mode;
@@ -407,6 +419,8 @@ void gimbal_get_ctrl_way(void) {
       rst_cnt = 0;
     }
 
+    if (IS_KEY_PRESS(KEY_G) == true && IS_KEY_LAST_PRESS(KEY_G) != true)
+      robot.is_center_fire = !robot.is_center_fire;
     // 发弹控制
     if (rc_ctrl_data.mouse.press_right == true) {
       robot.weapon.ctrl_mode = _vision_ctrl;
@@ -446,6 +460,9 @@ void gimbal_get_ctrl_way(void) {
       } else if (rc_right_switch == rc_sw_bottom) {
 
         robot.move_mode = _spin_mode;
+        if (rc_right_last_switch == rc_sw_middle) {
+          robot.spin_dir = !robot.spin_dir;
+        }
         robot.weapon.ctrl_mode = _vision_ctrl;
       }
 
@@ -541,6 +558,7 @@ void robot_gimbal_tim_loop(void) {
           is_vision_offline() == false) { // reset成功,开始接入视觉数据
         get_p_gimbal_expt_state()->yaw = vision_ctrl_state.yaw;
         get_p_gimbal_expt_state()->pitch = vision_ctrl_state.pitch;
+        get_p_gimbal_expt_state()->shooter_yaw = vision_ctrl_state.shooter_yaw;
         // get_p_gimbal_expt_state()->pitch=
         // vision_ctrl_state.pitch+deg2rad(mid_pitch_test)+deg2rad(A_pitch_test)*sin(omega_pitch_test*HAL_GetTick()/1000.f);
         delta_yaw_ang = 0;

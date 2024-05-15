@@ -31,7 +31,7 @@ float vision_pitch, vision_yaw;
 
 float MAX_PREDICT_T = 5.f;
 #define INIT_SHOOT_DELAY 0.30f
-float CONST_SHOOT_DELAY = 0.32; // 0.25f; // 固定发射延时
+float CONST_SHOOT_DELAY = 0.28f; // 0.25f; // 固定发射延时
 // 0807
 //->0.32	先0.3滞后,调高到0.32后过几小时又超前
 //  0806

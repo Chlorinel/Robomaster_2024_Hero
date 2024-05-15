@@ -33,7 +33,6 @@ uint8_t cover_state;
 uint8_t battle_45degreee;
 int8_t spin_direction;
 extern cap_data_t cap_data;
-uint8_t target_has_found;
 
 int cap_len_ui = 630;
 int HP_len_ui = 284;
@@ -89,13 +88,14 @@ void init_UI(void) {
 
   Static_UI(1, GRAPHIC_LINE, COLOR_MAIN_RB, 1600, 550, 1600, 620,
             5); // 底盘指示
-  Static_UI(2, GRAPHIC_ELLIPSE, COLOR_GREEN, 960, 110, 20, 20,
+  Static_UI(2, GRAPHIC_ELLIPSE, COLOR_GREEN, 1600, 800, 20, 20,
             4); // 控制方式ui
   Static_UI(3, GRAPHIC_ELLIPSE, COLOR_YELLOW, 1600, 700, 20, 20,
             4); // 中心火控控制
   Static_UI(4, GRAPHIC_SQUARE, COLOR_ORANGE, fov_point[0], fov_point[1],
             fov_point[2], fov_point[3], 2);
-
+  Static_UI(5, GRAPHIC_CIRCLE, COLOR_PINK, 1600, 600, 20, 20,
+            4); // 当前自瞄颜色  出现为蓝色
   Static_UI(6, GRAPHIC_LINE, COLOR_MAIN_RB, 900, 490, 1020, 590,
             8); // 摩擦轮指示
   Static_UI(7, GRAPHIC_SQUARE, COLOR_WHITE, 640, 190, 1280, 210, 2); // 电容框
@@ -105,6 +105,7 @@ void init_UI(void) {
             2); // 未定横线
   Static_UI(12, GRAPHIC_CIRCLE, COLOR_YELLOW, 1600, 550, 70, 0,
             2); // 底盘指示圆
+
   // Static_UI(10,GRAPHIC_LINE,COLOR_CYAN, 960,110,720,61,2);//斜线2
   // 铅垂线
   Static_UI(11, GRAPHIC_LINE, COLOR_CYAN, 950, 110, 950, 900, 2);
@@ -117,6 +118,7 @@ void init_UI(void) {
   Static_UI(16, GRAPHIC_LINE, COLOR_GREEN, 1552, 620, 1648, 620, 4); // 车头方向
   Static_UI(17, GRAPHIC_LINE, COLOR_GREEN, 580, 0, 730, 450, 4);
   Static_UI(18, GRAPHIC_LINE, COLOR_GREEN, 1280, 0, 1150, 450, 4);
+
   // 视场角
 
   // test_char();
@@ -154,7 +156,7 @@ void update_UI(void) { // 静态图层的设置
     } else {
       modify(3, 0, COLOR_CYAN, 0, 0);
     }
-    if (target_has_found == 1) {
+    if (vision_ctrl_data.target_found) {
       modify(4, 0, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
     } else {
       modify(4, 1, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
@@ -165,6 +167,11 @@ void update_UI(void) { // 静态图层的设置
     } else {
       modify(6, 1, COLOR_MAIN_RB, 0, 0);
     }
+    if (vision_request.local_color) {
+      modify(5, 1, COLOR_CYAN, 0, 0);
+    } else {
+      modify(5, 0, COLOR_CYAN, 0, 0);
+    }
 
     if (use_buffer == 1)
       modify(0, 2, COLOR_CYAN,
@@ -172,9 +179,6 @@ void update_UI(void) { // 静态图层的设置
     else
       modify(0, 2, COLOR_WHITE,
              645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 200);
-
-    // modify(4, 2, COLOR_PURPLE,
-    //        (uint16_t)CLAMP0((755 + 500 /*show_robot_HP*/), 755 + 600), 850);
 
     send_7(dynamic_layer_data1); // 勿动
     //		modify(4,2,COLOR_PURPLE,1000+BAR/2+HP_len_ui,875-WIDTH-BAR/2);

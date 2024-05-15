@@ -178,8 +178,6 @@ float end_error = 0;
 float kkkll = 3;
 
 bool chassis_follow_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
-  // delta_ang1 = fabs(get_delta_ang(chassis_real_state.yaw, 0, 2 * PI));
-  // delta_ang2 = fabs(get_delta_ang(chassis_real_state.yaw, PI, 2 * PI));
 
   delta_ang1 = fabs(get_delta_ang(chassis_real_state.motor_yaw, 0, 2 * PI));
   delta_ang2 = fabs(get_delta_ang(chassis_real_state.motor_yaw, PI, 2 * PI));
@@ -198,13 +196,9 @@ bool chassis_follow_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
       pid_calc(&chassis_follow_pid, 0,
                NL_Deadband(follow_mode_yaw_error, deg2rad(kkkll), 3));
 
-  // float chassis_expt_wz = pid_calc_deadband(&chassis_follow_pid,
-  // expt_delta_yaw,
-  //                                           follow_mode_yaw_error);
-
   // wz的速度与差角量方向相反
   chassis_ctrl(expt_delta_yaw, expt_vx, expt_vy, chassis_expt_wz);
-  // chassis_ctrl(expt_delta_yaw, 0, 0, 0);
+
   return true;
 }
 
@@ -232,8 +226,11 @@ float spin_speed = 10;
 float set_spin_speed(uint16_t power_lim) {
   CLAMP(power_lim, 50, 140);
   float spin_speed_ =
-      0.00000021f * pow4of(power_lim) - 0.00006097f * pow3of(power_lim) +
-      0.00453663f * pow2of(power_lim) + 0.12920262f * power_lim - 1.68644940f;
+      (0.00000021f * pow4of(power_lim) - 0.00006097f * pow3of(power_lim) +
+       0.00453663f * pow2of(power_lim) + 0.12920262f * power_lim -
+       1.68644940f) *
+      0.8;
+  // CLAMP(spin_speed_, 0, 18);
   CLAMP(spin_speed_, 0, 18);
   return spin_speed_;
 }
@@ -249,10 +246,17 @@ bool chassis_spin_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
 
   else { // 小陀螺时要x/y需求较小时,则吃满功率小陀螺
     spin_speed = set_spin_speed(game_robot_status.chassis_power_limit);
-    chassis_expt_wz =
-        // sign(chassis_real_state.wz) * fabs(chassis_power_lim.expt_wz);
-        sign(chassis_real_state.wz) * fabsf(spin_speed);
-    // fabs(sinf(htim11.Instance->CNT / 20000.0f * 2 * PI));
+    // chassis_expt_wz = sign(chassis_real_state.wz) * fabsf(spin_speed) *
+    // robot.spin_speed;
+    if (robot.spin_dir) {
+      chassis_expt_wz =
+
+          -1 * fabsf(spin_speed) * robot.spin_speed;
+    } else {
+      chassis_expt_wz =
+
+          1 * fabsf(spin_speed) * robot.spin_speed;
+    }
   }
   chassis_ctrl(expt_delta_yaw, expt_vx, expt_vy, chassis_expt_wz);
 
@@ -329,9 +333,6 @@ bool chassis_disable(float expt_delta_yaw, float expt_vx, float expt_vy) {
  */
 float expt_gimbal_yaw_scl, real_gimbal_yaw_scl;
 
-uint8_t is_cap_enable_flag;
-
-
 float omega_yaw_test = 10;
 float A_yaw_test = 10;
 float min_yaw_test = -3;
@@ -345,15 +346,8 @@ float chassis_expt_vx, chassis_expt_vy, chassis_expt_wz, chassis_expt_x,
 
 float ratio_vx1 = 0.1;
 float ratio_vy1 = 0.1;
-float chassis_expt_wz_thershold = 0.2;
+float chassis_expt_wz_thershold = 0.1;
 float deg111 = 0.706206799;
-
-bool change_dirc_over_flag = false;
-bool chassis_turn_to_deg111_flag = false;
-// uint8_t turn_flag = 0;
-// uint32_t turn_wait_tick = 0;
-float last_chassis_real_state_x = 0;
-bool force_enable_cap = true;
 
 float power_limit_test = 40;            // 测试上限功率
 float expt_cap_energy_ratio_test = 0.8; // 测试期望电容组期望容值比
@@ -389,47 +383,33 @@ void chassis_ctrl(float expt_delta_yaw, float expt_vx, float expt_vy,
   // chassis_power_distributor(&chassis_power_lim);
   //  底盘控制
 // #define theta (chassis_real_state.yaw)
-#define theta (chassis_real_state.motor_yaw)
+#define theta (chassis_motors._all_chassis_motors[4].real.abs_angle)
   extern chassis_power_lim_t chassis_power_lim;
 
-  chassis_expt_vx = ratio_x * (expt_vx * cos(theta) - expt_vy * sin(theta));
-  chassis_expt_vy = ratio_y * (expt_vy * cos(theta) + expt_vx * sin(theta));
-  //  chassis_expt_x =  * chassis_expt_vx;
-  //  chassis_expt_y = dt * chassis_expt_vy;
+  chassis_expt_vx =
+      ratio_x *
+      (expt_vx * cos(chassis_motors._all_chassis_motors[4].real.abs_angle) -
+       expt_vy * sin(chassis_motors._all_chassis_motors[4].real.abs_angle));
+  chassis_expt_vy =
+      ratio_y *
+      (expt_vy * cos(chassis_motors._all_chassis_motors[4].real.abs_angle) +
+       expt_vx * sin(chassis_motors._all_chassis_motors[4].real.abs_angle));
+
   // yaw计算
   chassis_expt_state.yaw = chassis_real_state.motor_yaw + expt_delta_yaw;
-  // chassis_expt_state.yaw =deg2rad(min_yaw_test)+
-  // deg2rad(A_yaw_test)*sin(omega_yaw_test*HAL_GetTick()/1000.f);
 
   chassis_expt_state.yaw = range_map(chassis_expt_state.yaw, -PI, PI);
-  // if (sign(chassis_real_state.x - last_chassis_real_state_x) !=
-  //     sign(robot.vx)) {
-  //   if (turn_flag == 0) {
-  //     turn_flag = 1;
 
-  //     turn_wait_tick = HAL_GetTick();
-  //   } else {
-  //     if (HAL_GetTick() - turn_wait_tick > 1000) {
-  //       turn_flag = 0;
-  //     }
-  //   }
-  // }
-  // if (turn_flag == 1) {
-  //   chassis_expt_state.yaw -= PI;
-  //   // chassis_expt_vx = -chassis_expt_vx;
-  //   // chassis_expt_vy = -chassis_expt_vy;
-  // }
-  // last_chassis_real_state_x = chassis_real_state.x;
   chassis_expt_state.yaw = range_map(chassis_expt_state.yaw, -PI, PI);
   yaw_controller(&chassis_expt_state, &chassis_real_state);
-  // chassis_real_state.motor_yaw = range_map(
-  //     chassis_real_state.c_yaw + chassis_real_state.motor_yaw, -PI, PI);
-  // 更新info中的real_yaw,注意yaw遵从右手坐标系
 
   chassis_expt_state.vx = chassis_expt_vx;
   chassis_expt_state.vy = chassis_expt_vy;
   chassis_expt_state.x += chassis_expt_x;
   chassis_expt_state.y += chassis_expt_y;
+
+  // extern float ratio_vx, ratio_vy;
+  // ratio_vx = 1, ratio_vy = 1;
 
   if (robot.chassis_mode == chassis_follow_mode ||
       robot.chassis_mode == chassis_spin_mode) {
@@ -456,14 +436,9 @@ void chassis_ctrl(float expt_delta_yaw, float expt_vx, float expt_vy,
   //     }
   //   }
   // }
-  // uint8_t is_cap_enable_flag = 0b01010101;
-   if ((game_robot_status.power_management_chassis_output == 1)) {
-    is_cap_enable_flag =1;
-  } else {
-    is_cap_enable_flag =0;
-  }
+
   wheel_controller(&chassis_expt_state, &chassis_real_state, &chassis_power_lim,
-                   is_cap_enable_flag);
+                   (game_robot_status.power_management_chassis_output == 1));
 }
 
 ///< other

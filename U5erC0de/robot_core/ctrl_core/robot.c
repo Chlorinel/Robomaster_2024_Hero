@@ -39,14 +39,13 @@ uint8_t contral_conut = 0;
 robot_ctrl_t robot = {
     .ctrl_mode = 0,
     .weapon.expt_front_v_shooter = 19,
-    .weapon.expt_back_v_shooter = 17.43, // gen2:18.6 //白：17.43
+    .weapon.expt_back_v_shooter = 17.78, // gen2:17.78 //白：17.43
     .weapon.real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.last_real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.ctrl_mode = _manual_ctrl,
     .weapon.f_is_fire = is_fire_rc,
     .weapon.f_is_ready_to_fire = is_ready_to_fire_rc,
     .weapon._is_vision_ok = VISION_NOTARGET,
-
     .chassis_mode = chassis_disable,
 };
 robot_ctrl_t *get_p_robot(void) { return &robot; }
@@ -106,6 +105,7 @@ void robot_init() {
   robot.base_speed = 1;
   robot.tank_speed = 1;
   robot.spin_speed = 1.5;
+  robot.is_center_fire = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@ float Gimbal_lob_pitch_level2 = 95.5; // in mm
 
 #include "./robot_core/weapon/vision.h"
 
-float real_vel_16 = INIT_SHOOT_SPEED; // 15.0409298f;
+float real_vel_16 = INIT_SHOOT_SPEED; // 15.609298f;
                                       // 新弹14.8
                                       // 旧弹14.9
 #define acc_time 0.1f // 键盘控制移动加速到最高速所用的时间
@@ -143,8 +143,6 @@ float k_lob_pitch = 0.002;
 float k_lob_yaw = 0.002;
 float k_friction = 0.1; // 摩擦轮调节速率
 float sigma_z = 0;
-float bot, top;
-
 extern target_spec_t target;
 
 // 当遥控器接到电脑后,把左拨杆拨到顶、右拨杆拨到底,即可切换到键鼠控制
@@ -162,17 +160,15 @@ uint32_t freq_of_vision = 0;
  *	@note 	此函数于tim4的1khz中断中运行
  *	@note	控制模式说明:带开机缓启动,缓启动时先自动回正
  **/
-float a234 = 0;
+
 gimbal_state_t vision_ctrl_state = {0};
 float delta_yaw_ang, delta_pitch_ang;
-float mid_pitch_test = -7;
-float A_pitch_test = 5;
-float omega_pitch_test = 6.28;
+
 extern gimbal_state_t gimbal_real_state;
 extern gimbal_state_t gimbal_expt_state;
-bool temp_flag = 0;
+
 void gimbal_get_ctrl_way(void) {
-  temp_flag = is_vt_rc_offline();
+
   if (robot.ctrl_mode == 0) {
     // 将图传相关标志位清空
 
@@ -225,16 +221,23 @@ void gimbal_get_ctrl_way(void) {
       if (robot.tank_speed <= 0.1) {
         robot.tank_speed = 0.1;
       }
-      if (robot.tank_speed > 3.5) {
-        robot.tank_speed = 3.5;
+      if (robot.tank_speed > 3.8) {
+        robot.tank_speed = 3.8;
       }
     } else if (robot.move_mode == _spin_mode) {
-      robot.spin_speed += Mouse_z / (fs_tim_freq * 4);
+      robot.spin_speed += Mouse_z / (fs_tim_freq * 10);
+      robot.tank_speed += -Mouse_z / (fs_tim_freq * 10);
       if (robot.spin_speed <= 0.1) {
         robot.spin_speed = 0.1;
       }
-      if (robot.spin_speed > 2) {
-        robot.spin_speed = 2;
+      if (robot.spin_speed > 1.53) {
+        robot.spin_speed = 1.53;
+      }
+      if (robot.tank_speed <= 0.1) {
+        robot.tank_speed = 0.1;
+      }
+      if (robot.tank_speed > 3.8) {
+        robot.tank_speed = 3.8;
       }
     }
 
@@ -358,7 +361,7 @@ void gimbal_get_ctrl_way(void) {
 
       float v_pitch = k_lob_pitch / 1000.f / 6 * (vcnt[0] - vcnt[1]);
       float v_yaw = k_lob_yaw / 1000.f / 6 * (vcnt[2] - vcnt[3]);
-      a234 = v_pitch;
+
       robot.v_pitch = -2 * PI * (v_pitch);
       robot.v_yaw = -2 * PI * (v_yaw);
     }
@@ -559,8 +562,7 @@ void robot_gimbal_tim_loop(void) {
         get_p_gimbal_expt_state()->yaw = vision_ctrl_state.yaw;
         get_p_gimbal_expt_state()->pitch = vision_ctrl_state.pitch;
         get_p_gimbal_expt_state()->shooter_yaw = vision_ctrl_state.shooter_yaw;
-        // get_p_gimbal_expt_state()->pitch=
-        // vision_ctrl_state.pitch+deg2rad(mid_pitch_test)+deg2rad(A_pitch_test)*sin(omega_pitch_test*HAL_GetTick()/1000.f);
+
         delta_yaw_ang = 0;
         delta_pitch_ang = 0;
       } else // if (is_tracker_reset_over == false)
@@ -568,11 +570,13 @@ void robot_gimbal_tim_loop(void) {
              // 或没视觉数据
         delta_yaw_ang = robot.v_yaw / fs_tim_freq;
         delta_pitch_ang = robot.v_pitch / fs_tim_freq;
+        get_p_gimbal_expt_state()->shooter_yaw = get_p_gimbal_expt_state()->yaw;
       }
     } else {
       robot.robot_flag.vision_data_ready_flag = 0;
       delta_yaw_ang = robot.v_yaw / fs_tim_freq;
       delta_pitch_ang = robot.v_pitch / fs_tim_freq;
+      get_p_gimbal_expt_state()->shooter_yaw = get_p_gimbal_expt_state()->yaw;
     }
     gimbal_ctrl(delta_yaw_ang, delta_pitch_ang);
 

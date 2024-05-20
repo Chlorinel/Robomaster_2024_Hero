@@ -5,7 +5,7 @@
 #include HAL_INCLUDE
 #include gimbal_module_core_h
 
-#define INIT_SHOOT_SPEED 15.6f // 默认氮素
+#define INIT_SHOOT_SPEED 15.5f // 默认氮素
 #define MAX_SHOOT_SPEED 15.8f  // 最高氮素
 #define MIN_SHOOT_SPEED 15.2f  // 最低氮素
 #define VISION_COLOR 1         // bule 0,red 1
@@ -86,7 +86,7 @@ typedef enum {
 } attack_target_type_t;
 #define VISION_RX_LOST_MAX 30
 #define VISION_MOVE_LOST_MAX 20
-
+extern attack_target_type_t attack_target_type;
 float get_cur_v0(void);
 void force_resfresh_cur_v0(float new_bullet_speed);
 void update_cur_v0_filter(void);

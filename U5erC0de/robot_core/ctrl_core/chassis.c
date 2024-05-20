@@ -228,8 +228,7 @@ float set_spin_speed(uint16_t power_lim) {
   float spin_speed_ =
       (0.00000021f * pow4of(power_lim) - 0.00006097f * pow3of(power_lim) +
        0.00453663f * pow2of(power_lim) + 0.12920262f * power_lim -
-       1.68644940f) *
-      0.8;
+       1.68644940f);
   // CLAMP(spin_speed_, 0, 18);
   CLAMP(spin_speed_, 0, 18);
   return spin_speed_;
@@ -246,17 +245,17 @@ bool chassis_spin_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
 
   else { // 小陀螺时要x/y需求较小时,则吃满功率小陀螺
     spin_speed = set_spin_speed(game_robot_status.chassis_power_limit);
-    // chassis_expt_wz = sign(chassis_real_state.wz) * fabsf(spin_speed) *
-    // robot.spin_speed;
-    if (robot.spin_dir) {
-      chassis_expt_wz =
+    chassis_expt_wz =
+        sign(chassis_real_state.wz) * fabsf(spin_speed) * robot.spin_speed;
+    // if (robot.spin_dir) {
+    //   chassis_expt_wz =
 
-          -1 * fabsf(spin_speed) * robot.spin_speed;
-    } else {
-      chassis_expt_wz =
+    //       -1 * fabsf(spin_speed) * robot.spin_speed;
+    // } else {
+    //   chassis_expt_wz =
 
-          1 * fabsf(spin_speed) * robot.spin_speed;
-    }
+    //       1 * fabsf(spin_speed) * robot.spin_speed;
+    // }
   }
   chassis_ctrl(expt_delta_yaw, expt_vx, expt_vy, chassis_expt_wz);
 
@@ -368,11 +367,14 @@ void chassis_ctrl(float expt_delta_yaw, float expt_vx, float expt_vy,
   chassis_power_lim = (chassis_power_lim_t){
       .power_limit =
           /*power_limit_test,*/ game_robot_status.chassis_power_limit,
+		
       //.referee_power_buffer = power_heat_data.chassis_power_buffer,
       .referee_power_buffer = chassis_power_lim.referee_power_buffer,
       .expt_cap_energy_ratio = expt_cap_energy_ratio_test,
       .expt_referee_power_buffer = expt_referee_power_buffer_test,
   };
+	if(chassis_power_lim.power_limit==0)
+	{chassis_power_lim.power_limit=50;}
   // update_soft_chassis_energy_buffer(&chassis_power_lim);
 #else
   extern float power_limit_test;
@@ -383,17 +385,11 @@ void chassis_ctrl(float expt_delta_yaw, float expt_vx, float expt_vy,
   // chassis_power_distributor(&chassis_power_lim);
   //  底盘控制
 // #define theta (chassis_real_state.yaw)
-#define theta (chassis_motors._all_chassis_motors[4].real.abs_angle)
+#define theta (chassis_real_state.motor_yaw)
   extern chassis_power_lim_t chassis_power_lim;
 
-  chassis_expt_vx =
-      ratio_x *
-      (expt_vx * cos(chassis_motors._all_chassis_motors[4].real.abs_angle) -
-       expt_vy * sin(chassis_motors._all_chassis_motors[4].real.abs_angle));
-  chassis_expt_vy =
-      ratio_y *
-      (expt_vy * cos(chassis_motors._all_chassis_motors[4].real.abs_angle) +
-       expt_vx * sin(chassis_motors._all_chassis_motors[4].real.abs_angle));
+  chassis_expt_vx = ratio_x * (expt_vx * cos(theta) - expt_vy * sin(theta));
+  chassis_expt_vy = ratio_y * (expt_vy * cos(theta) + expt_vx * sin(theta));
 
   // yaw计算
   chassis_expt_state.yaw = chassis_real_state.motor_yaw + expt_delta_yaw;
@@ -405,8 +401,6 @@ void chassis_ctrl(float expt_delta_yaw, float expt_vx, float expt_vy,
 
   chassis_expt_state.vx = chassis_expt_vx;
   chassis_expt_state.vy = chassis_expt_vy;
-  chassis_expt_state.x += chassis_expt_x;
-  chassis_expt_state.y += chassis_expt_y;
 
   // extern float ratio_vx, ratio_vy;
   // ratio_vx = 1, ratio_vy = 1;

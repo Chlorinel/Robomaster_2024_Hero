@@ -48,10 +48,10 @@
 #define MOTOR_FLTRNUM 0
 #define FIRL_MOTOR_FLTRNUM (MOTOR_FLTRNUM + 4)
 
-#define MAX_V 2.8f
+#define MAX_V 4.f
 
-#define SELF_POWER_CTRL 0
-#define CAP_POWER_CTRL 1
+#define SELF_POWER_CTRL 1
+#define CAP_POWER_CTRL 0
 
 #define APB1_freq 84000000.0f
 #define PI (3.14159265358979323846f)

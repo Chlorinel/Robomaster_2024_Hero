@@ -26,7 +26,6 @@ ext_shoot_data_t shoot_data;               // 0x0207
 ext_power_heat_data_t power_heat_data;     // 0x0202
 ext_rfid_status_t rfid_status;             // 0x0209
 ext_game_robot_pos_t game_robot_pos;       // 0x0203
-
 #define CMDID_TABLE_COL 11U
 #define CMDID_TABLE_ROW 4U
 

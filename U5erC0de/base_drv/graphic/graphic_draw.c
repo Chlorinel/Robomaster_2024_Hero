@@ -23,7 +23,10 @@
 
 extern UART_HandleTypeDef huart6;
 #define UI_HUART huart6
-
+#define FRONT_HEAT 0
+#define RIGHT_HEAT 1
+#define BACK_HEAT 2
+#define LEFT_HEAT 3
 // ext_client_custom_graphic_seven_t test_data;
 interaction_figure_2_t spin_fric_dot;
 interaction_figure_3_t dynamic_layer_data_extra;
@@ -89,19 +92,19 @@ void init_UI(void) {
   Static_UI(1, GRAPHIC_LINE, COLOR_MAIN_RB, 1600, 550, 1600, 620,
             5); // 底盘指示
   Static_UI(2, GRAPHIC_ELLIPSE, COLOR_GREEN, 1600, 800, 20, 20,
-            4); // 控制方式ui
+            4); // 控制方式ui   仅在配置模式出现  //fuck 模式开启
   Static_UI(3, GRAPHIC_ELLIPSE, COLOR_YELLOW, 1600, 700, 20, 20,
-            4); // 中心火控控制
+            4); // 中心火控控制   仅在配置模式出现  //当前预瞄准目标模式
   Static_UI(4, GRAPHIC_SQUARE, COLOR_ORANGE, fov_point[0], fov_point[1],
             fov_point[2], fov_point[3], 2);
-  Static_UI(5, GRAPHIC_CIRCLE, COLOR_PINK, 1600, 600, 20, 20,
-            4); // 当前自瞄颜色  出现为蓝色
+  Static_UI(5, GRAPHIC_CIRCLE, COLOR_PINK, 1600, 400, 20, 20,
+            4); // 当前自瞄颜色  出现为蓝色 仅在配置模式出现
   Static_UI(6, GRAPHIC_LINE, COLOR_MAIN_RB, 900, 490, 1020, 590,
             8); // 摩擦轮指示
   Static_UI(7, GRAPHIC_SQUARE, COLOR_WHITE, 640, 190, 1280, 210, 2); // 电容框
-  Static_UI(8, GRAPHIC_LINE, COLOR_MAIN_RB, 930, 453, 970, 453,
-            2); // 10m前哨站顶部
-  Static_UI(8, GRAPHIC_LINE, COLOR_MAIN_RB, 920, 443, 980, 443,
+  Static_UI(8, GRAPHIC_LINE, COLOR_MAIN_RB, 930, 640, 970, 640,
+            2); // 6m前哨站顶部
+  Static_UI(9, GRAPHIC_LINE, COLOR_MAIN_RB, 920, 443, 980, 443,
             2); // 未定横线
   Static_UI(12, GRAPHIC_CIRCLE, COLOR_YELLOW, 1600, 550, 70, 0,
             2); // 底盘指示圆
@@ -128,7 +131,7 @@ void update_UI(void) { // 静态图层的设置
 
   UI_count++;
 
-  float ang_del = chassis_motors._all_chassis_motors[4].real.abs_angle;
+  float ang_del = -chassis_motors._all_chassis_motors[4].real.abs_angle;
 
   float sin_yaw = sinf(ang_del); // 角度差转换为弧度
   float cos_yaw = cosf(ang_del);
@@ -146,15 +149,41 @@ void update_UI(void) { // 静态图层的设置
                     1.序号 2.出现 3.颜色 4.x 5.y
     */
     // send_char(3, 2, 1100, 650, COLOR_GREEN, 25, 2, spin_text); // 小陀螺指示
-    if (robot.ctrl_mode == 0) {
-      modify(2, 1, COLOR_CYAN, 0, 0);
+    if (robot.robot_flag.vt_config_flag) {
+      if (robot.ctrl_mode == 0) {
+        modify(2, 1, COLOR_CYAN, 0, 0);
+      } else {
+        modify(2, 0, COLOR_CYAN, 0, 0);
+      }
+      if (robot.is_center_fire == 0) {
+        modify(3, 1, COLOR_CYAN, 0, 0);
+      } else {
+        modify(3, 0, COLOR_CYAN, 0, 0);
+      }
+      if (vision_request.local_color) {
+        modify(5, 1, COLOR_CYAN, 0, 0);
+      } else {
+        modify(5, 0, COLOR_CYAN, 0, 0);
+      }
     } else {
-      modify(2, 0, COLOR_CYAN, 0, 0);
-    }
-    if (robot.is_center_fire == 0) {
-      modify(3, 1, COLOR_CYAN, 0, 0);
-    } else {
-      modify(3, 0, COLOR_CYAN, 0, 0);
+      if (robot.robot_flag.gimbal_fuck_mode_flag == 1) {
+        modify(2, 1, COLOR_CYAN, 50, 0);
+      } else {
+        modify(2, 0, COLOR_CYAN, 50, 0);
+      }
+      if (attack_target_type == 0 || attack_target_type == 4) {
+        modify(3, 1, COLOR_YELLOW, 50, 0);
+      } else {
+        modify(3, 0, COLOR_YELLOW, 50, 0);
+      }
+
+      if (robot_hurt.armor_id == FRONT_HEAT) {
+        modify(5, 1, COLOR_YELLOW, 0, 220);
+      } else if (robot_hurt.armor_id == RIGHT_HEAT) {
+      } else if (robot_hurt.armor_id == BACK_HEAT) {
+      } else if (robot_hurt.armor_id == LEFT_HEAT) {
+      } else {
+      }
     }
     if (vision_ctrl_data.target_found) {
       modify(4, 0, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
@@ -166,11 +195,6 @@ void update_UI(void) { // 静态图层的设置
       modify(6, 0, COLOR_MAIN_RB, 0, 0);
     } else {
       modify(6, 1, COLOR_MAIN_RB, 0, 0);
-    }
-    if (vision_request.local_color) {
-      modify(5, 1, COLOR_CYAN, 0, 0);
-    } else {
-      modify(5, 0, COLOR_CYAN, 0, 0);
     }
 
     if (use_buffer == 1)

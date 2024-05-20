@@ -21,8 +21,8 @@ chassis_motors_t chassis_motors = {0};
 /**。
  * @breif   yaw电机初始化参数
  */
-float yaw_kpid_pos[3] = {460, 0, 15};
-float yaw_kpid_vel[3] = {600, 0, 10};
+float yaw_kpid_pos[3] = {480, 4, 200};
+float yaw_kpid_vel[3] = {600, 0, 0};
 kalman1_state i_yaw_filter;
 /**
  * @brief   pitch电机的初始化函数

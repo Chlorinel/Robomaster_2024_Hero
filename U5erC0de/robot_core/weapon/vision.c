@@ -299,8 +299,8 @@ void send_vision_request(float current_roll, float current_pitch,
                          float current_yaw) {
 
   vision_request.header = VISION_UART_REQ_SOF;
-  // vision_request.base_mode = (attack_target_type == base_mid_armor ||
-  //                             attack_target_type == base_top_armor);
+  vision_request.base_mode = (attack_target_type == base_mid_armor ||
+                              attack_target_type == base_top_armor);
 
   vision_request.s_timestamp = robot.timestep;
   vision_request.rest_tracker = reset_tracker_flag;

@@ -192,9 +192,9 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
     // 前哨站特化
     if (attack_target_type == outpost_spin_armor ||
         attack_target_type == outpost_top_armor) {
-      xc = LPF_update(&xc_filter, xc);
-      yc = LPF_update(&yc_filter, yc);
-      zc = LPF_update(&zc_filter, zc);
+      // xc = LPF_update(&xc_filter, xc);
+      // yc = LPF_update(&yc_filter, yc);
+      // zc = LPF_update(&zc_filter, zc);
       // yaw=LPF_update(&yaw_filter,yaw);
       vx = 0;
       vy = 0;
@@ -281,8 +281,9 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
         float armor_yaw = yaw + i * diff_angle;
         float yaw_diff = get_delta_ang(armor_yaw, center_theta, 2 * PI);
         debug[7 + i] = yaw_diff;
-        if (-PI / armor_num + deg2rad(boundary_theta) + add_theta < yaw_diff &&
-            yaw_diff < PI / armor_num - deg2rad(boundary_theta) + add_theta) {
+				//-PI / armor_num
+        if (-0.35 + deg2rad(boundary_theta) + add_theta < yaw_diff &&
+            yaw_diff < 0.35 - deg2rad(boundary_theta) + add_theta) {
           armor_theta_diff = yaw_diff;
           debug[0] = -PI / armor_num + deg2rad(boundary_theta) + add_theta;
           debug[1] = yaw_diff;
@@ -470,12 +471,12 @@ float shoot_delta_pitch_scale = 0;
 float shootable_yaw_angle = 0.65;
 float shootable_pitch_angle = 0.35;
 
-float shootable_angle_p = 18;
-float shootable_angle_n = 10;
+float shootable_angle_p = 3;
+float shootable_angle_n = -3;
 bool is_enter_shootable_angle;
 
 // float shootable_angle=5;
-bool force_enable_shoot = true;
+bool force_enable_shoot = false;
 
 float outpost_ref_v = 0;
 float outpost_ref_v_thershold = 0.1;

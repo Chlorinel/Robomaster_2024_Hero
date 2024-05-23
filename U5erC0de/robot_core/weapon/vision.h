@@ -5,9 +5,9 @@
 #include HAL_INCLUDE
 #include gimbal_module_core_h
 
-#define INIT_SHOOT_SPEED 15.5f // 默认氮素
-#define MAX_SHOOT_SPEED 15.8f  // 最高氮素
-#define MIN_SHOOT_SPEED 15.2f  // 最低氮素
+#define INIT_SHOOT_SPEED 15.7f // 默认氮素
+#define MAX_SHOOT_SPEED 15.85f // 最高氮素
+#define MIN_SHOOT_SPEED 15.37f // 最低氮素
 #define VISION_COLOR 1         // bule 0,red 1
 
 typedef enum { COLOR_BLUE = 0, COLOR_RED = 1 } e_color_t;
@@ -23,7 +23,8 @@ typedef __packed struct {
   // uint8_t exposure_time : 2;
   uint8_t is_play : 1;
   bool reset_lost : 1;
-  uint8_t reserved : 2;
+  uint8_t reserved : 1;
+  uint8_t base_mode : 1;
 
   float roll;
   float pitch;

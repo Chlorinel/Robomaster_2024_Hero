@@ -20,7 +20,7 @@ typedef union {
   };
   motor_t _all_gimbal_motors[4];
 } gimbal_motors_t;
-
+extern gimbal_motors_t gimbal_motors;
 // 偷懒用
 #define num_of_all_gimbal_motors (sizeof(all_gimbal_motors) / sizeof(motor_t))
 

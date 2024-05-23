@@ -36,6 +36,7 @@ typedef struct {
   bool referee_kill_flag; // 1则被杀死
   bool vt_ctrl_flag;
   bool vt_config_flag;
+  bool self_power_ctrl;
 
 } robot_flag_t;
 

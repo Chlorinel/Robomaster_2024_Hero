@@ -19,6 +19,7 @@ static uint16_t cap_rx_lost = SUPER_CAP_RX_MAX_LOST;
  */
 float cap_data_rfreq = 0;
 raw_cap_data_t raw_cap_data;
+								
 HAL_StatusTypeDef parse_cap_data(CAN_RxHeaderTypeDef *rx_header,
                                  uint8_t *rx_buffer) {
   memcpy(&raw_cap_data, rx_buffer, sizeof(raw_cap_data_t));

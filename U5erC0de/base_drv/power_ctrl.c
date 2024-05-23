@@ -111,9 +111,10 @@ void chassis_power_distributor(chassis_power_lim_t *pow_lim,
   uint32_t delta_tick = CLAMP_MAX(HAL_GetTick() - tickstart, 100);
   // 不会真的有人会用周期大于0.1s的频率控制底盘吧
   tickstart = HAL_GetTick();
-	/// debug
-	pow_lim->chassis_real_total_power=cap_data->input_voltage*cap_data->output_current;
-	
+  /// debug
+  pow_lim->chassis_real_total_power =
+      cap_data->input_voltage * cap_data->output_current;
+
   ///>>> 确定可调配的功率值
   float k_referee_buffer = // 通过改变闭环期望电容组剩余能量进而实现稳定缓冲能量
       pid_calc(&referee_buffer_limit_pid,          //
@@ -126,12 +127,12 @@ void chassis_power_distributor(chassis_power_lim_t *pow_lim,
   float k = _pow2(VCAP_MAX) - _pow2(VCAP_MIN);
   float real_cap_energy_ratio = // 实际电容剩余能量百分比
       (_pow2(cap_data->cap_voltage) - _pow2(VCAP_MIN)) / k;
-	pow_lim->real_cap_ratio=real_cap_energy_ratio;
+  pow_lim->real_cap_ratio = real_cap_energy_ratio;
   float ratio_error = real_cap_energy_ratio - pow_lim->expt_cap_energy_ratio;
   float expt_cap_energy_ratio =
       pow_lim->expt_cap_energy_ratio + k_referee_buffer * ratio_error;
   LIMIT_MIN_MAX(expt_cap_energy_ratio, 0.f, 1.f);
-  
+
   pow_lim->set_total_power = //
       pow_lim->power_limit - //
       pid_calc(&power_limit_pid, expt_cap_energy_ratio, real_cap_energy_ratio);
@@ -193,6 +194,7 @@ void chassis_power_distributor(chassis_power_lim_t *pow_lim,
     } else {
       LIMIT_MIN_MAX(set_Iq, raw_expt_Iq[i], 0);
     }
+    LIMIT_MIN_MAX(set_Iq, -16383, 16383);
     pow_lim->set_Iq[i] = set_Iq;
   }
 #endif

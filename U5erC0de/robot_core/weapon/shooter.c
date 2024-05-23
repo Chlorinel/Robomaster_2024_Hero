@@ -72,7 +72,7 @@ bool is_load_over(void) {
     return false;
 }
 
-float to_change_kp = 70;
+float to_change_kp = 85;
 float to_change_ki = 0;
 float to_change_kd = 0;
 uint8_t front_or_back = 0;

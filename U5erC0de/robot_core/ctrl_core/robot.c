@@ -39,7 +39,7 @@ uint8_t contral_conut = 0;
 robot_ctrl_t robot = {
     .ctrl_mode = 0,
     .weapon.expt_front_v_shooter = 19,
-    .weapon.expt_back_v_shooter = 17.78, // gen2:17.78 //白：17.43
+    .weapon.expt_back_v_shooter = 17.9000015, // gen2:17.9000015 //白：17.43
     .weapon.real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.last_real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.ctrl_mode = _manual_ctrl,
@@ -221,8 +221,8 @@ void gimbal_get_ctrl_way(void) {
       if (robot.tank_speed <= 0.1) {
         robot.tank_speed = 0.1;
       }
-      if (robot.tank_speed > 3.8) {
-        robot.tank_speed = 3.8;
+      if (robot.tank_speed > MAX_MOVE_SPEED) {
+        robot.tank_speed = MAX_MOVE_SPEED;
       }
     } else if (robot.move_mode == _spin_mode) {
       robot.spin_speed += Mouse_z / (fs_tim_freq * 10);
@@ -230,14 +230,14 @@ void gimbal_get_ctrl_way(void) {
       if (robot.spin_speed <= 0.1) {
         robot.spin_speed = 0.1;
       }
-      if (robot.spin_speed > 1.53) {
-        robot.spin_speed = 1.53;
+      if (robot.spin_speed > MAX_SPIN_SPEED) {
+        robot.spin_speed = MAX_SPIN_SPEED;
       }
       if (robot.tank_speed <= 0.1) {
         robot.tank_speed = 0.1;
       }
-      if (robot.tank_speed > 3.8) {
-        robot.tank_speed = 3.8;
+      if (robot.tank_speed > MAX_MOVE_SPEED) {
+        robot.tank_speed = MAX_MOVE_SPEED;
       }
     }
 
@@ -424,6 +424,8 @@ void gimbal_get_ctrl_way(void) {
 
     if (IS_KEY_PRESS(KEY_G) == true && IS_KEY_LAST_PRESS(KEY_G) != true)
       robot.is_center_fire = !robot.is_center_fire;
+    if (IS_KEY_PRESS(KEY_D) == true && IS_KEY_LAST_PRESS(KEY_D) != true)
+      robot.robot_flag.self_power_ctrl = !robot.robot_flag.self_power_ctrl;
     // 发弹控制
     if (rc_ctrl_data.mouse.press_right == true) {
       robot.weapon.ctrl_mode = _vision_ctrl;

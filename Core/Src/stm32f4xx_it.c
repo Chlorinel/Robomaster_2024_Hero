@@ -18,18 +18,21 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
 #include "stm32f4xx_it.h"
+#include "main.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "./base_drv/drv_conf.h"
-#include gimbal_module_core_h
-#include chassis_module_core_h
 #include "./base_drv/drv_buzzer/buzzer.h"
+#include "./base_drv/drv_conf.h"
 #include "./base_drv/drv_rc/rc.h"
 #include "./base_drv/drv_referee/referee.h"
+#include "./robot_core/ctrl_core/chassis.h"
+#include "./robot_core/ctrl_core/gimbal.h"
+#include "./robot_core/ctrl_core/gimbal_motor_ctrl.h"
 
 // #include "./robot_core/interface/interface_BTB.h"
+#include "./base_drv/2812.h"
 #include "./robot_core/ctrl_core/robot.h"
 #include "./robot_core/weapon/shooter.h"
 #include "./robot_core/weapon/vision.h"
@@ -72,6 +75,8 @@
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
+extern DMA_HandleTypeDef hdma_tim1_ch1;
+extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim7;
@@ -93,10 +98,9 @@ extern UART_HandleTypeDef huart6;
 /*           Cortex-M4 Processor Interruption and Exception Handlers          */
 /******************************************************************************/
 /**
-  * @brief This function handles Non maskable interrupt.
-  */
-void NMI_Handler(void)
-{
+ * @brief This function handles Non maskable interrupt.
+ */
+void NMI_Handler(void) {
   /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
 
   /* USER CODE END NonMaskableInt_IRQn 0 */
@@ -107,10 +111,9 @@ void NMI_Handler(void)
 }
 
 /**
-  * @brief This function handles Hard fault interrupt.
-  */
-void HardFault_Handler(void)
-{
+ * @brief This function handles Hard fault interrupt.
+ */
+void HardFault_Handler(void) {
   /* USER CODE BEGIN HardFault_IRQn 0 */
   uint32_t tickstart = HAL_GetTick();
   beep(50, 20, 1); // 1s
@@ -119,63 +122,55 @@ void HardFault_Handler(void)
 
   //  System_Reset();
   /* USER CODE END HardFault_IRQn 0 */
-  while (1)
-  {
+  while (1) {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
     /* USER CODE END W1_HardFault_IRQn 0 */
   }
 }
 
 /**
-  * @brief This function handles Memory management fault.
-  */
-void MemManage_Handler(void)
-{
+ * @brief This function handles Memory management fault.
+ */
+void MemManage_Handler(void) {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
 
   /* USER CODE END MemoryManagement_IRQn 0 */
-  while (1)
-  {
+  while (1) {
     /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
     /* USER CODE END W1_MemoryManagement_IRQn 0 */
   }
 }
 
 /**
-  * @brief This function handles Pre-fetch fault, memory access fault.
-  */
-void BusFault_Handler(void)
-{
+ * @brief This function handles Pre-fetch fault, memory access fault.
+ */
+void BusFault_Handler(void) {
   /* USER CODE BEGIN BusFault_IRQn 0 */
 
   /* USER CODE END BusFault_IRQn 0 */
-  while (1)
-  {
+  while (1) {
     /* USER CODE BEGIN W1_BusFault_IRQn 0 */
     /* USER CODE END W1_BusFault_IRQn 0 */
   }
 }
 
 /**
-  * @brief This function handles Undefined instruction or illegal state.
-  */
-void UsageFault_Handler(void)
-{
+ * @brief This function handles Undefined instruction or illegal state.
+ */
+void UsageFault_Handler(void) {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
 
   /* USER CODE END UsageFault_IRQn 0 */
-  while (1)
-  {
+  while (1) {
     /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
     /* USER CODE END W1_UsageFault_IRQn 0 */
   }
 }
 
 /**
-  * @brief This function handles System service call via SWI instruction.
-  */
-void SVC_Handler(void)
-{
+ * @brief This function handles System service call via SWI instruction.
+ */
+void SVC_Handler(void) {
   /* USER CODE BEGIN SVCall_IRQn 0 */
 
   /* USER CODE END SVCall_IRQn 0 */
@@ -185,10 +180,9 @@ void SVC_Handler(void)
 }
 
 /**
-  * @brief This function handles Debug monitor.
-  */
-void DebugMon_Handler(void)
-{
+ * @brief This function handles Debug monitor.
+ */
+void DebugMon_Handler(void) {
   /* USER CODE BEGIN DebugMonitor_IRQn 0 */
 
   /* USER CODE END DebugMonitor_IRQn 0 */
@@ -198,10 +192,9 @@ void DebugMon_Handler(void)
 }
 
 /**
-  * @brief This function handles Pendable request for system service.
-  */
-void PendSV_Handler(void)
-{
+ * @brief This function handles Pendable request for system service.
+ */
+void PendSV_Handler(void) {
   /* USER CODE BEGIN PendSV_IRQn 0 */
 
   /* USER CODE END PendSV_IRQn 0 */
@@ -211,10 +204,9 @@ void PendSV_Handler(void)
 }
 
 /**
-  * @brief This function handles System tick timer.
-  */
-void SysTick_Handler(void)
-{
+ * @brief This function handles System tick timer.
+ */
+void SysTick_Handler(void) {
   /* USER CODE BEGIN SysTick_IRQn 0 */
 
   /* USER CODE END SysTick_IRQn 0 */
@@ -232,10 +224,9 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles DMA1 stream1 global interrupt.
-  */
-void DMA1_Stream1_IRQHandler(void)
-{
+ * @brief This function handles DMA1 stream1 global interrupt.
+ */
+void DMA1_Stream1_IRQHandler(void) {
   /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
 
   /* USER CODE END DMA1_Stream1_IRQn 0 */
@@ -246,10 +237,9 @@ void DMA1_Stream1_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles CAN1 RX0 interrupts.
-  */
-void CAN1_RX0_IRQHandler(void)
-{
+ * @brief This function handles CAN1 RX0 interrupts.
+ */
+void CAN1_RX0_IRQHandler(void) {
   /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
 
   /* USER CODE END CAN1_RX0_IRQn 0 */
@@ -260,10 +250,9 @@ void CAN1_RX0_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles CAN1 RX1 interrupt.
-  */
-void CAN1_RX1_IRQHandler(void)
-{
+ * @brief This function handles CAN1 RX1 interrupt.
+ */
+void CAN1_RX1_IRQHandler(void) {
   /* USER CODE BEGIN CAN1_RX1_IRQn 0 */
 
   /* USER CODE END CAN1_RX1_IRQn 0 */
@@ -274,14 +263,28 @@ void CAN1_RX1_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM1 trigger and commutation interrupts and TIM11 global interrupt.
-  */
-void TIM1_TRG_COM_TIM11_IRQHandler(void)
-{
+ * @brief This function handles TIM1 break interrupt and TIM9 global interrupt.
+ */
+void TIM1_BRK_TIM9_IRQHandler(void) {
+  /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 0 */
+
+  /* USER CODE END TIM1_BRK_TIM9_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim1);
+  /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 1 */
+
+  /* USER CODE END TIM1_BRK_TIM9_IRQn 1 */
+}
+
+/**
+ * @brief This function handles TIM1 trigger and commutation interrupts and
+ * TIM11 global interrupt.
+ */
+void TIM1_TRG_COM_TIM11_IRQHandler(void) {
   /* USER CODE BEGIN TIM1_TRG_COM_TIM11_IRQn 0 */
   // transmit_BTB_msg(&BTB_CAN,-1);
 
   /* USER CODE END TIM1_TRG_COM_TIM11_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim1);
   HAL_TIM_IRQHandler(&htim11);
   /* USER CODE BEGIN TIM1_TRG_COM_TIM11_IRQn 1 */
 
@@ -289,10 +292,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles USART1 global interrupt.
-  */
-void USART1_IRQHandler(void)
-{
+ * @brief This function handles USART1 global interrupt.
+ */
+void USART1_IRQHandler(void) {
   /* USER CODE BEGIN USART1_IRQn 0 */
 
   /* USER CODE END USART1_IRQn 0 */
@@ -305,10 +307,9 @@ void USART1_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles USART3 global interrupt.
-  */
-void USART3_IRQHandler(void)
-{
+ * @brief This function handles USART3 global interrupt.
+ */
+void USART3_IRQHandler(void) {
   /* USER CODE BEGIN USART3_IRQn 0 */
 
   /* USER CODE END USART3_IRQn 0 */
@@ -321,11 +322,12 @@ void USART3_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM8 trigger and commutation interrupts and TIM14 global interrupt.
-  */
-void TIM8_TRG_COM_TIM14_IRQHandler(void)
-{
+ * @brief This function handles TIM8 trigger and commutation interrupts and
+ * TIM14 global interrupt.
+ */
+void TIM8_TRG_COM_TIM14_IRQHandler(void) {
   /* USER CODE BEGIN TIM8_TRG_COM_TIM14_IRQn 0 */
+
   update_chassis_motor_status();
   update_gimbal_motor_status();
   if ((HAL_CAN_GetError(&hcan1) & HAL_CAN_ERROR_BOF)) {
@@ -337,6 +339,74 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void)
     CAN2->MCR |= CAN_MCR_INRQ;
     HAL_CAN_Start(&hcan2);
   }
+  SLEF_SET_COLOR(8, 0, 0, 0);
+  if (robot.robot_flag.gimbal_fuck_mode_flag == 1) {
+    setcolor(4, YELLOW);
+  }
+  if (robot.move_mode == _spin_mode) {
+    setcolor(7, GREEN);
+  } else if (robot.move_mode == _tank_mode) {
+    setcolor(7, WHITE);
+  } else if (robot.move_mode == _follow_mode) {
+    setcolor(7, YELLOW);
+  } else if (robot.move_mode == _lob_mode) {
+    setcolor(7, BLUE);
+  }
+  if (robot.robot_flag.chassis_super_cap_enable_flag == 1) {
+    setcolor(6, YELLOW);
+  }
+  if (robot.ctrl_mode == 1) {
+    setcolor(1, YELLOW);
+  } else if (robot.ctrl_mode == 0) {
+    setcolor(1, GREEN);
+  }
+  if (vision_request.local_color == 1) {
+    setcolor(2, RED);
+  } else if (vision_request.local_color == 0) {
+    setcolor(2, BLUE);
+  }
+  if (gimbal_motors._firectrl_motor.real.speed_rpm > 10) {
+    setcolor(3, YELLOW);
+  } else if (gimbal_motors._firectrl_motor.real.speed_rpm < -10) {
+    setcolor(3, GREEN);
+  }
+  if (robot.robot_flag.vt_config_flag) {
+    setcolor(8, YELLOW);
+  }
+  if (attack_target_type == outpost_spin_armor) {
+    setcolor(5, GREEN);
+  } else if (attack_target_type == outpost_top_armor) {
+    setcolor(5, BLUE);
+  } else if (attack_target_type == base_mid_armor ||
+             attack_target_type == base_top_armor) {
+    setcolor(5, RED);
+  } else if (attack_target_type == other) {
+    setcolor(5, YELLOW);
+  }
+  reset();
+  send_color();
+
+  // 1 - CTRL_MODE
+  //                 绿色：遥控器
+  //                 黄色：图传
+  // 2 - VISION_COLOR
+  //                 红色：锁蓝
+  //                 蓝色：锁红
+  // 3 -FIRE_MOTOR_STATE
+  //                 黄色：打蛋
+  //                 绿色：上蛋
+  // 4 - FUCKKKKKK 黄色：开启
+  // 5 -ATTACK_MODE
+  //                 绿色：前哨站旋转装甲板
+  //                 蓝色：前哨站顶部装甲板
+  //                 红色：基地装甲
+  //                 黄色：其他
+  // 6 -SUPER_CAP 黄色：开启
+  // 7 -CHASSIS_MODE
+  //                 黄色：跟随
+  //                 白色：坦克
+  //                 蓝色：吊射
+  //                 绿色：小陀螺
 
   /* USER CODE END TIM8_TRG_COM_TIM14_IRQn 0 */
   HAL_TIM_IRQHandler(&htim14);
@@ -346,10 +416,9 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM5 global interrupt.
-  */
-void TIM5_IRQHandler(void)
-{
+ * @brief This function handles TIM5 global interrupt.
+ */
+void TIM5_IRQHandler(void) {
   /* USER CODE BEGIN TIM5_IRQn 0 */
   robot_chassis_tim_loop();
   /* USER CODE END TIM5_IRQn 0 */
@@ -360,10 +429,10 @@ void TIM5_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM6 global interrupt, DAC1 and DAC2 underrun error interrupts.
-  */
-void TIM6_DAC_IRQHandler(void)
-{
+ * @brief This function handles TIM6 global interrupt, DAC1 and DAC2 underrun
+ * error interrupts.
+ */
+void TIM6_DAC_IRQHandler(void) {
   /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
   // 1khz
   robot_gimbal_tim_loop();
@@ -376,16 +445,15 @@ void TIM6_DAC_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM7 global interrupt.
-  */
-void TIM7_IRQHandler(void)
-{
+ * @brief This function handles TIM7 global interrupt.
+ */
+void TIM7_IRQHandler(void) {
   /* USER CODE BEGIN TIM7_IRQn 0 */
   // 2.5khz
-	bool end_list;
+  bool end_list;
   imu_loop();
-  end_list=get_fw_speed_error();
-	end_list=!end_list;
+  end_list = get_fw_speed_error();
+  end_list = !end_list;
   update_chassis_real_state();
   /* USER CODE END TIM7_IRQn 0 */
   HAL_TIM_IRQHandler(&htim7);
@@ -395,38 +463,35 @@ void TIM7_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA2 stream1 global interrupt.
-  */
-void DMA2_Stream1_IRQHandler(void)
-{
+ * @brief This function handles DMA2 stream1 global interrupt.
+ */
+void DMA2_Stream1_IRQHandler(void) {
   /* USER CODE BEGIN DMA2_Stream1_IRQn 0 */
 
   /* USER CODE END DMA2_Stream1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart6_rx);
+  HAL_DMA_IRQHandler(&hdma_tim1_ch1);
   /* USER CODE BEGIN DMA2_Stream1_IRQn 1 */
 
   /* USER CODE END DMA2_Stream1_IRQn 1 */
 }
 
 /**
-  * @brief This function handles DMA2 stream2 global interrupt.
-  */
-void DMA2_Stream2_IRQHandler(void)
-{
+ * @brief This function handles DMA2 stream2 global interrupt.
+ */
+void DMA2_Stream2_IRQHandler(void) {
   /* USER CODE BEGIN DMA2_Stream2_IRQn 0 */
 
   /* USER CODE END DMA2_Stream2_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart1_rx);
+  HAL_DMA_IRQHandler(&hdma_usart6_rx);
   /* USER CODE BEGIN DMA2_Stream2_IRQn 1 */
 
   /* USER CODE END DMA2_Stream2_IRQn 1 */
 }
 
 /**
-  * @brief This function handles CAN2 RX0 interrupts.
-  */
-void CAN2_RX0_IRQHandler(void)
-{
+ * @brief This function handles CAN2 RX0 interrupts.
+ */
+void CAN2_RX0_IRQHandler(void) {
   /* USER CODE BEGIN CAN2_RX0_IRQn 0 */
 
   /* USER CODE END CAN2_RX0_IRQn 0 */
@@ -437,10 +502,9 @@ void CAN2_RX0_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles CAN2 RX1 interrupt.
-  */
-void CAN2_RX1_IRQHandler(void)
-{
+ * @brief This function handles CAN2 RX1 interrupt.
+ */
+void CAN2_RX1_IRQHandler(void) {
   /* USER CODE BEGIN CAN2_RX1_IRQn 0 */
 
   /* USER CODE END CAN2_RX1_IRQn 0 */
@@ -451,10 +515,9 @@ void CAN2_RX1_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles USB On The Go FS global interrupt.
-  */
-void OTG_FS_IRQHandler(void)
-{
+ * @brief This function handles USB On The Go FS global interrupt.
+ */
+void OTG_FS_IRQHandler(void) {
   /* USER CODE BEGIN OTG_FS_IRQn 0 */
 
   /* USER CODE END OTG_FS_IRQn 0 */
@@ -465,10 +528,22 @@ void OTG_FS_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA2 stream6 global interrupt.
-  */
-void DMA2_Stream6_IRQHandler(void)
-{
+ * @brief This function handles DMA2 stream5 global interrupt.
+ */
+void DMA2_Stream5_IRQHandler(void) {
+  /* USER CODE BEGIN DMA2_Stream5_IRQn 0 */
+
+  /* USER CODE END DMA2_Stream5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart1_rx);
+  /* USER CODE BEGIN DMA2_Stream5_IRQn 1 */
+
+  /* USER CODE END DMA2_Stream5_IRQn 1 */
+}
+
+/**
+ * @brief This function handles DMA2 stream6 global interrupt.
+ */
+void DMA2_Stream6_IRQHandler(void) {
   /* USER CODE BEGIN DMA2_Stream6_IRQn 0 */
 
   /* USER CODE END DMA2_Stream6_IRQn 0 */
@@ -479,10 +554,9 @@ void DMA2_Stream6_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA2 stream7 global interrupt.
-  */
-void DMA2_Stream7_IRQHandler(void)
-{
+ * @brief This function handles DMA2 stream7 global interrupt.
+ */
+void DMA2_Stream7_IRQHandler(void) {
   /* USER CODE BEGIN DMA2_Stream7_IRQn 0 */
 
   /* USER CODE END DMA2_Stream7_IRQn 0 */
@@ -493,10 +567,9 @@ void DMA2_Stream7_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles USART6 global interrupt.
-  */
-void USART6_IRQHandler(void)
-{
+ * @brief This function handles USART6 global interrupt.
+ */
+void USART6_IRQHandler(void) {
   /* USER CODE BEGIN USART6_IRQn 0 */
   referee_uart_idle_handle(&huart6);
   /* USER CODE END USART6_IRQn 0 */

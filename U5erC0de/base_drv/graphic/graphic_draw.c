@@ -40,6 +40,9 @@ extern cap_data_t cap_data;
 int cap_len_ui = 630;
 int HP_len_ui = 284;
 
+uint16_t max_spin_speed_len_ui = 200;
+uint16_t max_move_speed_len_ui = 200;
+
 uint16_t UI_count;
 
 #if CLEAN_FLAG == 1
@@ -91,37 +94,44 @@ void init_UI(void) {
 
   Static_UI(1, GRAPHIC_LINE, COLOR_MAIN_RB, 1600, 550, 1600, 620,
             5); // 底盘指示
-  Static_UI(2, GRAPHIC_ELLIPSE, COLOR_GREEN, 1600, 800, 20, 20,
-            4); // 控制方式ui   仅在配置模式出现  //fuck 模式开启
-  Static_UI(3, GRAPHIC_ELLIPSE, COLOR_YELLOW, 1600, 700, 20, 20,
-            4); // 中心火控控制   仅在配置模式出现  //当前预瞄准目标模式
+  Static_UI(2, GRAPHIC_LINE, COLOR_GREEN, 1620, 400, 1620, 600, 12); // 移动速度
+  Static_UI(3, GRAPHIC_LINE, COLOR_GREEN, 1700, 400, 1700, 600,
+            12); // 小陀螺速度
   Static_UI(4, GRAPHIC_SQUARE, COLOR_ORANGE, fov_point[0], fov_point[1],
             fov_point[2], fov_point[3], 2);
-  Static_UI(5, GRAPHIC_CIRCLE, COLOR_PINK, 1600, 400, 20, 20,
-            4); // 当前自瞄颜色  出现为蓝色 仅在配置模式出现
+  Static_UI(5, GRAPHIC_LINE, COLOR_PINK, 200, 550, 200, 620,
+            5); // 当前攻击模式
   Static_UI(6, GRAPHIC_LINE, COLOR_MAIN_RB, 900, 490, 1020, 590,
             8); // 摩擦轮指示
   Static_UI(7, GRAPHIC_SQUARE, COLOR_WHITE, 640, 190, 1280, 210, 2); // 电容框
-  Static_UI(8, GRAPHIC_LINE, COLOR_MAIN_RB, 930, 640, 970, 640,
-            2); // 6m前哨站顶部
-  Static_UI(9, GRAPHIC_LINE, COLOR_MAIN_RB, 920, 443, 980, 443,
-            2); // 未定横线
+  Static_UI(8, GRAPHIC_SQUARE, COLOR_WHITE, 1610, 390, 1710, 610,
+            2); // 移动速度框
+  Static_UI(9, GRAPHIC_LINE, COLOR_MAIN_RB, 900, 640, 1000, 640,
+            1); // 6m前哨站顶部
+  Static_UI(10, GRAPHIC_LINE, COLOR_MAIN_RB, 850, 485, 1050, 485,
+            1); // 13.7m前哨站顶部横线
+  Static_UI(11, GRAPHIC_LINE, COLOR_MAIN_RB, 800, 300, 1100, 300,
+            1); // 21m基地顶部绿灯
   Static_UI(12, GRAPHIC_CIRCLE, COLOR_YELLOW, 1600, 550, 70, 0,
             2); // 底盘指示圆
 
-  // Static_UI(10,GRAPHIC_LINE,COLOR_CYAN, 960,110,720,61,2);//斜线2
-  // 铅垂线
-  Static_UI(11, GRAPHIC_LINE, COLOR_CYAN, 950, 110, 950, 900, 2);
-  // 瞄准刻度线
-  //		Static_UI(12,GRAPHIC_LINE,COLOR_CYAN,860,300,1060,300,2);
-  //		Static_UI(13,GRAPHIC_LINE,COLOR_CYAN,885,350,1035,350,2);
-  //		Static_UI(14,GRAPHIC_LINE,COLOR_CYAN,910,400,1010,400,2);
-  // 中心框
-  //		Static_UI(15,GRAPHIC_LINE,COLOR_GREEN,600,640,650,690,2);
-  Static_UI(16, GRAPHIC_LINE, COLOR_GREEN, 1552, 620, 1648, 620, 4); // 车头方向
+  Static_UI(13, GRAPHIC_LINE, COLOR_MAIN_RB, 960, 568, 1040, 568,
+            1); // 9m前哨站顶部横线
+
+  Static_UI(14, GRAPHIC_LINE, COLOR_MAIN_RB, 920, 503, 980, 503,
+            1); // 8m环高基地顶部绿灯
+
+  Static_UI(15, GRAPHIC_LINE, COLOR_WHITE, 930, 110, 930, 900, 1);
+  // 8m前哨站旋转预瞄右
+  Static_UI(16, GRAPHIC_LINE, COLOR_WHITE, 970, 110, 970, 900, 1);
+  // 8m前哨站旋转预瞄左
+
   Static_UI(17, GRAPHIC_LINE, COLOR_GREEN, 580, 0, 730, 450, 4);
   Static_UI(18, GRAPHIC_LINE, COLOR_GREEN, 1280, 0, 1150, 450, 4);
-
+  Static_UI(19, GRAPHIC_LINE, COLOR_CYAN, 950, 110, 950, 900, 1);
+  // 瞄准刻度线
+  Static_UI(20, GRAPHIC_CIRCLE, COLOR_PINK, 200, 550, 200, 20,
+            2); // 当前攻击模式
   // 视场角
 
   // test_char();
@@ -132,7 +142,7 @@ void update_UI(void) { // 静态图层的设置
   UI_count++;
 
   float ang_del = -chassis_motors._all_chassis_motors[4].real.abs_angle;
-
+  float attack_mode_angle;
   float sin_yaw = sinf(ang_del); // 角度差转换为弧度
   float cos_yaw = cosf(ang_del);
 
@@ -150,39 +160,30 @@ void update_UI(void) { // 静态图层的设置
     */
     // send_char(3, 2, 1100, 650, COLOR_GREEN, 25, 2, spin_text); // 小陀螺指示
     if (robot.robot_flag.vt_config_flag) {
-      if (robot.ctrl_mode == 0) {
-        modify(2, 1, COLOR_CYAN, 0, 0);
-      } else {
-        modify(2, 0, COLOR_CYAN, 0, 0);
-      }
-      if (robot.is_center_fire == 0) {
-        modify(3, 1, COLOR_CYAN, 0, 0);
-      } else {
-        modify(3, 0, COLOR_CYAN, 0, 0);
-      }
-      if (vision_request.local_color) {
-        modify(5, 1, COLOR_CYAN, 0, 0);
-      } else {
-        modify(5, 0, COLOR_CYAN, 0, 0);
-      }
-    } else {
-      if (robot.robot_flag.gimbal_fuck_mode_flag == 1) {
-        modify(2, 1, COLOR_CYAN, 50, 0);
-      } else {
-        modify(2, 0, COLOR_CYAN, 50, 0);
-      }
-      if (attack_target_type == 0 || attack_target_type == 4) {
-        modify(3, 1, COLOR_YELLOW, 50, 0);
-      } else {
-        modify(3, 0, COLOR_YELLOW, 50, 0);
-      }
 
-      if (robot_hurt.armor_id == FRONT_HEAT) {
-        modify(5, 1, COLOR_YELLOW, 0, 220);
-      } else if (robot_hurt.armor_id == RIGHT_HEAT) {
-      } else if (robot_hurt.armor_id == BACK_HEAT) {
-      } else if (robot_hurt.armor_id == LEFT_HEAT) {
-      } else {
+    } else {
+      if (attack_target_type == outpost_spin_armor) {
+        attack_mode_angle = 0;
+        modify(5, 2, COLOR_MAIN_RB,
+               (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
+               (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
+
+      } else if (attack_target_type == outpost_top_armor) {
+        attack_mode_angle = PI / 2;
+        modify(5, 2, COLOR_MAIN_RB,
+               (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
+               (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
+      } else if (attack_target_type == base_mid_armor ||
+                 attack_target_type == base_top_armor) {
+        attack_mode_angle = PI;
+        modify(5, 2, COLOR_MAIN_RB,
+               (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
+               (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
+      } else if (attack_target_type == other) {
+        attack_mode_angle = 1.5 * PI;
+        modify(5, 2, COLOR_MAIN_RB,
+               (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
+               (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
       }
     }
     if (vision_ctrl_data.target_found) {
@@ -197,12 +198,17 @@ void update_UI(void) { // 静态图层的设置
       modify(6, 1, COLOR_MAIN_RB, 0, 0);
     }
 
-    if (use_buffer == 1)
+    if (robot.robot_flag.chassis_super_cap_enable_flag == 1)
       modify(0, 2, COLOR_CYAN,
              645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 200);
     else
       modify(0, 2, COLOR_WHITE,
              645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 200);
+    modify(2, 2, COLOR_CYAN, 1620,
+           400 + (robot.base_speed / MAX_MOVE_SPEED) * max_move_speed_len_ui);
+
+    modify(3, 2, COLOR_CYAN, 1700,
+           400 + (robot.spin_speed / MAX_SPIN_SPEED) * max_spin_speed_len_ui);
 
     send_7(dynamic_layer_data1); // 勿动
     //		modify(4,2,COLOR_PURPLE,1000+BAR/2+HP_len_ui,875-WIDTH-BAR/2);
@@ -229,6 +235,34 @@ void update_UI(void) { // 静态图层的设置
            645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 250);
     // modify(4, 1, COLOR_PURPLE, (uint16_t)CLAMP0((755 + show_robot_HP), 1920),
     //        837);
+    modify(2, 1, COLOR_CYAN, 1620,
+           400 + (robot.base_speed / MAX_MOVE_SPEED) * max_move_speed_len_ui);
+
+    modify(3, 1, COLOR_CYAN, 1700,
+           400 + (robot.spin_speed / MAX_SPIN_SPEED) * max_spin_speed_len_ui);
+    if (attack_target_type == outpost_spin_armor) {
+      attack_mode_angle = 0;
+      modify(5, 1, COLOR_MAIN_RB,
+             (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
+             (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
+
+    } else if (attack_target_type == outpost_top_armor) {
+      attack_mode_angle = PI / 2;
+      modify(5, 1, COLOR_MAIN_RB,
+             (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
+             (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
+    } else if (attack_target_type == base_mid_armor ||
+               attack_target_type == base_top_armor) {
+      attack_mode_angle = PI;
+      modify(5, 1, COLOR_MAIN_RB,
+             (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
+             (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
+    } else if (attack_target_type == other) {
+      attack_mode_angle = 1.5 * PI;
+      modify(5, 1, COLOR_MAIN_RB,
+             (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
+             (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
+    }
     send_7(dynamic_layer_data1); // 勿动
   }
 }

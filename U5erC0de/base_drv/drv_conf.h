@@ -50,8 +50,11 @@
 
 #define MAX_V 4.f
 
-#define SELF_POWER_CTRL 1
-#define CAP_POWER_CTRL 0
+#define MAX_MOVE_SPEED 3.8
+#define MAX_SPIN_SPEED 1.53
+
+#define SELF_POWER_CTRL 0
+#define CAP_POWER_CTRL 1
 
 #define APB1_freq 84000000.0f
 #define PI (3.14159265358979323846f)

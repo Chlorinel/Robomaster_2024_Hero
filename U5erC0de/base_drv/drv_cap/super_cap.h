@@ -10,7 +10,7 @@
 
 #define SUPER_CAP_RX_MAX_LOST 0xff
 
-#define VCAP_MAX 30.f // 电容组最高放电电压
+#define VCAP_MAX 25.f // 电容组最高放电电压
 // 你改高也没用,这玩意功率板里写死的
 #define VCAP_MIN 5.f // 电容组最低放电电压
 // 注意功率板的变压效率会随着电容电压与电池电压的压差绝对值增大而增大

@@ -227,8 +227,7 @@ float set_spin_speed(uint16_t power_lim) {
   CLAMP(power_lim, 50, 140);
   float spin_speed_ =
       (0.00000021f * pow4of(power_lim) - 0.00006097f * pow3of(power_lim) +
-       0.00453663f * pow2of(power_lim) + 0.12920262f * power_lim -
-       1.68644940f);
+       0.00453663f * pow2of(power_lim) + 0.12920262f * power_lim - 1.68644940f);
   // CLAMP(spin_speed_, 0, 18);
   CLAMP(spin_speed_, 0, 18);
   return spin_speed_;
@@ -245,17 +244,17 @@ bool chassis_spin_mode(float expt_delta_yaw, float expt_vx, float expt_vy) {
 
   else { // 小陀螺时要x/y需求较小时,则吃满功率小陀螺
     spin_speed = set_spin_speed(game_robot_status.chassis_power_limit);
-    chassis_expt_wz =
-        sign(chassis_real_state.wz) * fabsf(spin_speed) * robot.spin_speed;
-    // if (robot.spin_dir) {
-    //   chassis_expt_wz =
+    // chassis_expt_wz =
+    // sign(chassis_real_state.wz) * fabsf(spin_speed) * robot.spin_speed;
+    if (robot.spin_dir) {
+      chassis_expt_wz =
 
-    //       -1 * fabsf(spin_speed) * robot.spin_speed;
-    // } else {
-    //   chassis_expt_wz =
+          -1 * fabsf(spin_speed) * robot.spin_speed;
+    } else {
+      chassis_expt_wz =
 
-    //       1 * fabsf(spin_speed) * robot.spin_speed;
-    // }
+          1 * fabsf(spin_speed) * robot.spin_speed;
+    }
   }
   chassis_ctrl(expt_delta_yaw, expt_vx, expt_vy, chassis_expt_wz);
 
@@ -314,7 +313,7 @@ bool chassis_disable(float expt_delta_yaw, float expt_vx, float expt_vy) {
   chassis_expt_state.vx = 0;
   chassis_expt_state.vy = 0;
   chassis_expt_state.wz = 0;
-
+  chassis_ctrl(0, 0, 0, 0);
   shutdown_all_chassis_motor();
   return false;
 }
@@ -367,14 +366,15 @@ void chassis_ctrl(float expt_delta_yaw, float expt_vx, float expt_vy,
   chassis_power_lim = (chassis_power_lim_t){
       .power_limit =
           /*power_limit_test,*/ game_robot_status.chassis_power_limit,
-		
+
       //.referee_power_buffer = power_heat_data.chassis_power_buffer,
       .referee_power_buffer = chassis_power_lim.referee_power_buffer,
       .expt_cap_energy_ratio = expt_cap_energy_ratio_test,
       .expt_referee_power_buffer = expt_referee_power_buffer_test,
   };
-	if(chassis_power_lim.power_limit==0)
-	{chassis_power_lim.power_limit=50;}
+  if (chassis_power_lim.power_limit == 0) {
+    chassis_power_lim.power_limit = 50;
+  }
   // update_soft_chassis_energy_buffer(&chassis_power_lim);
 #else
   extern float power_limit_test;

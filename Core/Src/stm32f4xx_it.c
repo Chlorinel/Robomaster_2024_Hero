@@ -371,7 +371,7 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
     setcolor(3, GREEN);
   }
   if (robot.robot_flag.vt_config_flag) {
-    setcolor(8, YELLOW);
+    setcolor(0, YELLOW);
   }
   if (attack_target_type == outpost_spin_armor) {
     setcolor(5, GREEN);

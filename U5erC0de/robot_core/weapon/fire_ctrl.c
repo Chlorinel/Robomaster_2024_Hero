@@ -3,18 +3,92 @@
 #include "./algorithm/util.h"
 #include "./algorithm/zero_new_bee_filter.h"
 #include "./robot_core/ctrl_core/robot.h"
-#include <stdint.h>
 
 #include gimbal_module_core_h
 #include "./robot_core/interface/interface_BTB.h"
 #include "./robot_core/tool/bus_detect.h"
 #include "./robot_core/weapon/fire_ctrl_param.h"
 #include "./robot_core/weapon/vision.h"
-
 #define MIDDLE 0
-
 float cur_v0 = INIT_SHOOT_SPEED; // 氮素
 float last_bullet_speed = INIT_SHOOT_SPEED;
+
+// 旋转矩阵（Roll, Pitch, Yaw）的3x3矩阵表示
+typedef struct {
+  float m[3][3];
+} Matrix3x3;
+
+Matrix3x3 matrix_multiply(Matrix3x3 a, Matrix3x3 b) {
+  Matrix3x3 result;
+  for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      result.m[i][j] = 0;
+      for (int k = 0; k < 3; ++k) {
+        result.m[i][j] += a.m[i][k] * b.m[k][j];
+      }
+    }
+  }
+  return result;
+}
+// 计算旋转矩阵（Roll, Pitch, Yaw）
+Matrix3x3 rotation_matrix(float roll, float pitch, float yaw) {
+  Matrix3x3 R_x, R_y, R_z, R;
+
+  float cr = cos(roll);
+  float sr = sin(roll);
+  float cp = cos(pitch);
+  float sp = sin(pitch);
+  float cy = cos(yaw);
+  float sy = sin(yaw);
+
+  R_x.m[0][0] = 1;
+  R_x.m[0][1] = 0;
+  R_x.m[0][2] = 0;
+  R_x.m[1][0] = 0;
+  R_x.m[1][1] = cr;
+  R_x.m[1][2] = -sr;
+  R_x.m[2][0] = 0;
+  R_x.m[2][1] = sr;
+  R_x.m[2][2] = cr;
+
+  R_y.m[0][0] = cp;
+  R_y.m[0][1] = 0;
+  R_y.m[0][2] = sp;
+  R_y.m[1][0] = 0;
+  R_y.m[1][1] = 1;
+  R_y.m[1][2] = 0;
+  R_y.m[2][0] = -sp;
+  R_y.m[2][1] = 0;
+  R_y.m[2][2] = cp;
+
+  R_z.m[0][0] = cy;
+  R_z.m[0][1] = -sy;
+  R_z.m[0][2] = 0;
+  R_z.m[1][0] = sy;
+  R_z.m[1][1] = cy;
+  R_z.m[1][2] = 0;
+  R_z.m[2][0] = 0;
+  R_z.m[2][1] = 0;
+  R_z.m[2][2] = 1;
+
+  R = matrix_multiply(matrix_multiply(R_z, R_y), R_x);
+
+  return R;
+}
+// 从单位方向向量近似欧拉角（Pitch, Yaw）
+void approximate_euler_from_vector(float vx, float vy, float vz, float *pitch,
+                                   float *yaw) {
+  // 注意：这里我们忽略了roll，因为输入向量已经是在特定roll下的
+  // 计算pitch（俯仰角，绕Y轴旋转）
+  if (vz < -1)
+    vz = -1; // 避免除零和arcsin定义域问题
+  if (vz > 1)
+    vz = 1;
+  *pitch = -atan2(vz, sqrt(vx * vx + vy * vy));
+  // 计算yaw（偏航角
+  // 绕Z轴旋转，但这里我们需要根据X和Y分量）
+  *yaw = atan2(vy, vx);
+}
 
 float get_cur_v0(void) { return cur_v0; }
 void force_resfresh_cur_v0(float new_bullet_speed) {
@@ -37,6 +111,7 @@ void update_cur_v0_filter(void) {
 }
 
 LPF_t xc_filter, yc_filter, zc_filter, yaw_filter;
+LPF_t base_xc_filter, base_yc_filter, base_zc_filter;
 LPF_t vx_filter, vy_filter, vz_filter, vyaw_filter;
 LPF_t rc_filter, rd_filter;
 LPF_t outpost_armor_v_filter;
@@ -48,10 +123,15 @@ sin_data_t outpost_armor_yaw = {
 };
 outpost_armor_t outpost = {0};
 attack_target_type_t attack_target_type;
+float count_tset;
 void est_position_filter_init(void) {
-  LPF_init(&xc_filter, 1.f / fs_tim_freq, 2);
-  LPF_init(&yc_filter, 1.f / fs_tim_freq, 2);
-  LPF_init(&zc_filter, 1.f / fs_tim_freq, 2);
+  LPF_init(&xc_filter, 1.f / fs_tim_freq, 1);
+  LPF_init(&yc_filter, 1.f / fs_tim_freq, 1);
+  LPF_init(&zc_filter, 1.f / fs_tim_freq, 1);
+
+  LPF_init(&base_xc_filter, 1.f / fs_tim_freq, count_tset);
+  LPF_init(&base_yc_filter, 1.f / fs_tim_freq, count_tset);
+  LPF_init(&base_zc_filter, 1.f / fs_tim_freq, count_tset);
 
   LPF_init(&vx_filter, 1.f / fs_tim_freq, 1);
   LPF_init(&vy_filter, 1.f / fs_tim_freq, 1);
@@ -62,7 +142,7 @@ void est_position_filter_init(void) {
   LPF_init(&rd_filter, 1.f / fs_tim_freq, 0.1);
   LPF_init(&vyaw_filter, 1.f / fs_tim_freq, 0.1);
 
-  LPF_init(&outpost_armor_v_filter, 1.f / fs_tim_freq, 1);
+  LPF_init(&outpost_armor_v_filter, 1.f / fs_tim_freq, 0.1);
 } /**
    * @brief   刷新低通滤波器
    */
@@ -70,6 +150,9 @@ void refresh_LPF_filter(void) {
   xc_filter.fltr_val = vision_ctrl_data.x;
   yc_filter.fltr_val = vision_ctrl_data.y;
   zc_filter.fltr_val = vision_ctrl_data.z;
+  base_xc_filter.fltr_val = vision_ctrl_data.x;
+  base_yc_filter.fltr_val = vision_ctrl_data.y;
+  base_zc_filter.fltr_val = vision_ctrl_data.z;
   vx_filter.fltr_val = vision_ctrl_data.vx;
   vy_filter.fltr_val = vision_ctrl_data.vy;
   vz_filter.fltr_val = vision_ctrl_data.vz;
@@ -109,6 +192,7 @@ void get_vision_aim_mode(void) {
 
   } else {
   }
+  // 抽象吧
 }
 /**
  * @brief   视觉数据自动开火控制
@@ -124,9 +208,10 @@ enum {
 float outpost_vyaw_level0 = 1.25;
 float outpost_vyaw_level1 = 2.5;
 
-float const_outpost_R = 0.277; // 0.29; // 0.27 // 0.226;
+float const_outpost_R = 0.270; // 0.29; // 0.27 // 0.226;
 
-float offset_theta = 0; // 不击打刚出来那一段				//0
+float offset_theta = 30; // 不击打刚出来那一段 //0
+                         // //fire_config_debug[0];
 
 float k_theta_omega = 10; // 云台跟随角度振幅与云台跟随角频率之积//5
 float aim_mid = 0.001;
@@ -134,11 +219,12 @@ float gimbal_follow = 0.004;
 float boundary_theta; // 可使选取比理想的边界小点	//59
 
 float vyaw_bound = 5.f;
-float choose_speed_vyaw = 1;
+float choose_speed_vyaw = 0.5;
 float armor_theta_diff = 0;
-
+float distance_offset;
+float zc_offest = 0.12;
 float center_theta;
-
+float last_xc;
 float distance_xyz;
 float gimbal_follow_omega;   // 云台yaw最大震荡频率
 float gimbal_follow_boudary; // 云台yaw最大摆动幅度
@@ -152,6 +238,7 @@ ballistic_sol_t center_solution;
 ballistic_sol_t solution;
 float r_freq_vision = 0;
 float shooter_yaw_offset_temp, shooter_pitch_offset_temp;
+float temp_pitch_angle, temp_yaw_angle;
 uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
                         float *shooter_yaw_ang, float dt, bool is_center_fire) {
   if (vision_ctrl_data.target_found) {
@@ -192,27 +279,35 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
     // 前哨站特化
     if (attack_target_type == outpost_spin_armor ||
         attack_target_type == outpost_top_armor) {
-      // xc = LPF_update(&xc_filter, xc);
-      // yc = LPF_update(&yc_filter, yc);
-      // zc = LPF_update(&zc_filter, zc);
+      xc = LPF_update(&xc_filter, xc);
+      yc = LPF_update(&yc_filter, yc);
+      zc = LPF_update(&zc_filter, zc);
       // yaw=LPF_update(&yaw_filter,yaw);
       vx = 0;
       vy = 0;
       vz = 0;
       dz = 0;
-      r1 = const_outpost_R; // LPF_update(&rd_filter, r1);
+      r1 = LPF_update(&rd_filter,
+                      r1); // const_outpost_R; // LPF_update(&rd_filter, r1);
       rd_filter.fltr_val = const_outpost_R;
       r2 = r1;
+
       // float outpost_armor_v = vision_ctrl_data.v_yaw * vision_ctrl_data.r1;
       // LPF_update(&outpost_armor_v_filter, outpost_armor_v);
       // vyaw = outpost_armor_v / const_outpost_R;
       // CLAMP_MAX(vyaw, 3);
-      // vyaw = LPF_update(&vyaw_filter, vyaw);
+      vyaw = LPF_update(&vyaw_filter, vyaw);
 
       yaw_filter.fc = vyaw;
-
-      // bool is_armor_jump = 0;
-
+      //      if (vyaw > 2) {
+      //        vyaw = -1 * vyaw;
+      //        yaw = -1 * yaw;
+      //      }
+      // if(vyaw>2)
+      // {shooter_yaw_offset=0.02;}
+      // else if(vyaw<-2)
+      // {shooter_yaw_offset=0;}
+      // bool is_armor_jump = vision_ctrl_data.is_armor_jump;
       // calculate_outpost_yaw(&outpost, is_armor_jump, yaw);
       // write_sensor_data(&outpost_armor_yaw, outpost.track_yaw,
       // HAL_GetTick()); update_sin_data(&outpost_armor_yaw);
@@ -223,8 +318,25 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       }
     }
     // 基地模式特化
+
     else if (attack_target_type == base_mid_armor ||
              attack_target_type == base_top_armor) {
+      extern bool had_find_base;
+      if (last_xc == 0 && xc != 0 && had_find_base != 1) {
+        xc = LPF_update(&base_xc_filter, xc);
+        xc = LPF_update(&base_xc_filter, xc);
+        xc = LPF_update(&base_xc_filter, xc);
+        yc = LPF_update(&base_yc_filter, yc);
+        zc = LPF_update(&base_zc_filter, zc);
+        yc = LPF_update(&base_yc_filter, yc);
+        zc = LPF_update(&base_zc_filter, zc);
+        yc = LPF_update(&base_yc_filter, yc);
+        zc = LPF_update(&base_zc_filter, zc);
+      }
+
+      xc = LPF_update(&xc_filter, xc);
+      yc = LPF_update(&yc_filter, yc);
+      zc = LPF_update(&zc_filter, zc);
       vx = 0;
       vy = 0;
       vz = 0;
@@ -232,6 +344,7 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       vyaw = 0;
       r1 = LPF_update(&rc_filter, r1);
       r2 = r1;
+      last_xc = xc;
       extern float base_mode_target_z0_offset;
       zc += base_mode_target_z0_offset;
 
@@ -246,7 +359,8 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
     xc = xc + predict_time * vx;
     yc = yc + predict_time * vy;
     zc = zc + predict_time * vz;
-
+    // float yaw_predict_time = predict_time + (fabs(vyaw) > vyaw_bound ?
+    // _shoot_delay : 0.f);
     yaw = yaw + predict_time * vyaw;
 
     // 选板
@@ -261,7 +375,6 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
         fabs(vyaw) > choose_speed_vyaw) {
       // 目标转速较快,此时就得选板
       // 确定跟随幅度
-
       distance_xyz = sqrt(xc * xc + yc * yc + zc * zc);
       gimbal_follow_omega =
           fabs(vyaw) * r1 / distance_xyz; // 云台yaw最大震荡频率
@@ -275,15 +388,13 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
         CLAMP(boundary_theta, 0, rad2deg(PI / armor_num) - 5 / 2);
       else
         CLAMP(boundary_theta, rad2deg(PI / armor_num) - 5 / 2, 0);
-      float limit_theta = (PI / 4 - 0.08f);
-      float theta = 0.25f;
+
       for (size_t i = 0; i < armor_num; i++) {
         float armor_yaw = yaw + i * diff_angle;
         float yaw_diff = get_delta_ang(armor_yaw, center_theta, 2 * PI);
         debug[7 + i] = yaw_diff;
-				//-PI / armor_num
-        if (-0.35 + deg2rad(boundary_theta) + add_theta < yaw_diff &&
-            yaw_diff < 0.35 - deg2rad(boundary_theta) + add_theta) {
+        if (-PI / armor_num + deg2rad(boundary_theta) + add_theta < yaw_diff &&
+            yaw_diff < PI / armor_num - deg2rad(boundary_theta) + add_theta) {
           armor_theta_diff = yaw_diff;
           debug[0] = -PI / armor_num + deg2rad(boundary_theta) + add_theta;
           debug[1] = yaw_diff;
@@ -299,7 +410,8 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
           }
 
           bool is_selected_armor_radius_shorter = (r == min(r1, r2));
-          if ( //(fabs(r - rd_filter.fltr_val) < fabs(r - rd_filter.fltr_val) &&
+          if ( //(fabs(r - rd_filter.fltr_val) < fabs(r - rd_filter.fltr_val)
+               //&&
                // armor_num == 4) ||
               (is_selected_armor_radius_shorter && armor_num == 4) ||
               // 4装甲板目标仅打半径小的
@@ -308,18 +420,18 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
           {
             aim_spin_status = SPIN_FOLLOW;
             // Robot state to armor
-
             debu[0] = vx;
             debu[1] = vy;
             debu[2] = vz;
             debu[3] = vyaw;
             debu[4] = armor_yaw;
             debu[5] = center_theta;
-
             est_x = xc - rd_filter.fltr_val * cos(armor_yaw);
+
             center_est_x = xc;
             est_y = yc - rd_filter.fltr_val * sin(armor_yaw);
             center_est_y = yc;
+
             est_z = _est_z;
           } else { // 非半径较小的装甲板,就不打了
             aim_spin_status = SPIN_WAIT;
@@ -343,9 +455,9 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       aim_spin_status = STOP;
       est_x = xc - r1 * cos(yaw);
       est_y = yc - r1 * sin(yaw);
-      est_z = zc;
-
+      est_z = zc + zc_offest;
       // est_z = real_z;
+
       armor_theta_diff = get_delta_ang(yaw, center_theta, 2 * PI);
     }
 
@@ -365,10 +477,18 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
           sin(gimbal_real_state.roll) * shooter_yaw_offset_temp;
 
       distance_xy = sqrtf(est_x * est_x + est_y * est_y);
+
+      extern gimbal_state_t gimbal_real_state;
+      target.x0 = distance_xy - 0.1f * cos(gimbal_real_state.pitch);
+      target.z0 = est_z - 0.1f * sin(-gimbal_real_state.pitch) *
+                              cos(gimbal_real_state.roll);
+
       center_distance_xy =
           sqrtf(center_est_x * center_est_x + center_est_y * center_est_y) -
           rd_filter.fltr_val;
-
+      if (1) {
+        distance_xy += distance_offset;
+      }
       // distance_xy = real_distance;
       if (is_center_fire) {
         if (aim_spin_status == STOP) {
@@ -380,12 +500,12 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
         }
       } else { //
         if (1) {
-          *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
-          *shooter_yaw_ang = *yaw_ang;
+          temp_yaw_angle = atan2f(est_y, est_x) + _shooter_yaw_offset;
+          // *shooter_yaw_ang = temp_yaw_angle;
         } else {
-          *yaw_ang = atan2f(yc, xc) + _shooter_yaw_offset;
+          temp_yaw_angle = atan2f(yc, xc) + _shooter_yaw_offset;
           //*shooter_yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
-          *shooter_yaw_ang = *yaw_ang;
+          // *shooter_yaw_ang = temp_yaw_angle;
         }
       }
       extern gimbal_state_t gimbal_real_state;
@@ -399,27 +519,30 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
                                      cos(gimbal_real_state.roll);
       projectile_solve(cur_v0, &target, &solution);
       projectile_solve(cur_v0, &center_target, &center_solution);
+//      extern vision_ctrl_t vision_request;
       if (0) {
 
         if (center_solution.solution_num > 0) {
           if (center_solution.ang_solution1 < center_solution.ang_solution2) {
-            *pitch_ang = -center_solution.ang_solution1 + _shooter_pitch_offset;
+            temp_pitch_angle =
+                -center_solution.ang_solution1 + _shooter_pitch_offset;
           } else {
-            *pitch_ang = -center_solution.ang_solution2 + _shooter_pitch_offset;
+            temp_pitch_angle =
+                -center_solution.ang_solution2 + _shooter_pitch_offset;
           }
         } else {
-          *pitch_ang = atan2f(est_z, center_distance_xy);
+          temp_pitch_angle = atan2f(est_z, center_distance_xy);
         }
       } else {
 
         if (solution.solution_num > 0) {
           if (solution.ang_solution1 < solution.ang_solution2) {
-            *pitch_ang = -solution.ang_solution1 + _shooter_pitch_offset;
+            temp_pitch_angle = -solution.ang_solution1 + _shooter_pitch_offset;
           } else {
-            *pitch_ang = -solution.ang_solution2 + _shooter_pitch_offset;
+            temp_pitch_angle = -solution.ang_solution2 + _shooter_pitch_offset;
           }
         } else {
-          *pitch_ang = atan2f(est_z, distance_xy);
+          temp_pitch_angle = atan2f(est_z, distance_xy);
         }
       }
     }
@@ -428,6 +551,23 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       //			est_y = 0;
       //			est_z = 0;
     }
+    float initial_vector[3] = {cos(temp_pitch_angle) * cos(temp_yaw_angle),
+                               cos(temp_pitch_angle) * sin(temp_yaw_angle),
+                               sin(temp_pitch_angle)};
+    Matrix3x3 R_initial = rotation_matrix(0, temp_pitch_angle, temp_yaw_angle);
+    float rotated_initial_vector[3] = {R_initial.m[2][0], R_initial.m[2][1],
+                                       R_initial.m[2][2]};
+    Matrix3x3 R_roll = rotation_matrix(vision_request.roll, 0, 0);
+    float rotated_vector[3] = {0, 0, 0};
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        rotated_vector[i] += R_roll.m[i][j] * rotated_initial_vector[j];
+      }
+    }
+
+    approximate_euler_from_vector(rotated_vector[0], rotated_vector[1],
+                                  rotated_vector[2], pitch_ang, yaw_ang);
+
     predict_time += dt;
     return VISION_OK;
   } else {
@@ -459,7 +599,6 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
 		vision_ctrl_data.suggest_fire=true;
 		return VISION_OK;
 #else
-
     return VISION_NOTARGET;
 #endif
   }
@@ -471,8 +610,8 @@ float shoot_delta_pitch_scale = 0;
 float shootable_yaw_angle = 0.65;
 float shootable_pitch_angle = 0.35;
 
-float shootable_angle_p = 3;
-float shootable_angle_n = -3;
+float shootable_angle_p = 10;
+float shootable_angle_n = -10;
 bool is_enter_shootable_angle;
 
 // float shootable_angle=5;
@@ -484,6 +623,7 @@ float outpost_armor_v_error = 0;
 float outpost_armor_v_error_thershold = 0.1;
 float yaw_lllllll = 0;
 float yaw_lll = 0;
+
 void get_vision_suggest_fire(gimbal_state_t *gimbal_expt_state,
                              gimbal_state_t *gimbal_real_state) {
 
@@ -511,7 +651,9 @@ void get_vision_suggest_fire(gimbal_state_t *gimbal_expt_state,
   debug[5] = -deg2rad(shootable_angle_p);
   yaw_lllllll = shoot_delta_yaw_angle - deg2rad(shootable_yaw_angle);
   yaw_lll = shoot_delta_pitch_angle - deg2rad(shootable_pitch_angle);
-  // float ang1 = vision_ctrl_data.yaw + predict_time * vision_ctrl_data.v_yaw;
+
+  // float ang1 = vision_ctrl_data.yaw + predict_time *
+  // vision_ctrl_data.v_yaw;
   if (shoot_delta_yaw_angle < deg2rad(shootable_yaw_angle) &&
       shoot_delta_pitch_angle <
           deg2rad(shootable_pitch_angle) && // 云台跟随情况

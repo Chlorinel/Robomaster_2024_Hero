@@ -39,7 +39,7 @@ uint8_t contral_conut = 0;
 robot_ctrl_t robot = {
     .ctrl_mode = 0,
     .weapon.expt_front_v_shooter = 19,
-    .weapon.expt_back_v_shooter = 17.9000015, // gen2:17.9000015 //白：17.43
+    .weapon.expt_back_v_shooter = 17.43, // gen2:17.9000015 //白：17.43
     .weapon.real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.last_real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.ctrl_mode = _manual_ctrl,
@@ -166,7 +166,7 @@ float delta_yaw_ang, delta_pitch_ang;
 
 extern gimbal_state_t gimbal_real_state;
 extern gimbal_state_t gimbal_expt_state;
-
+ bool base_mode_enable_flag = false;
 void gimbal_get_ctrl_way(void) {
 
   if (robot.ctrl_mode == 0) {
@@ -367,7 +367,7 @@ void gimbal_get_ctrl_way(void) {
     }
     extern bool base_mode_enable;
     extern bool had_find_base;
-    static bool base_mode_enable_flag = false;
+   
     if (IS_KEY_PRESS(KEY_B) == true && IS_KEY_LAST_PRESS(KEY_B) == false) {
       base_mode_enable_flag = !base_mode_enable_flag;
     }
@@ -401,6 +401,7 @@ void gimbal_get_ctrl_way(void) {
   } else if (switch_to_config_mode ||
              (robot.ctrl_mode == 1 &&
               robot.robot_flag.vt_config_flag == 1)) { // 配置模式
+
     robot_gimbal_power_on;
     robot.vy = 0;
     robot.vx = 0;
@@ -459,7 +460,7 @@ void gimbal_get_ctrl_way(void) {
         robot.move_mode = _follow_mode;
         robot.is_imu_ctrl_yaw = 1;
         robot.weapon.ctrl_mode = _manual_ctrl;
-        robot.robot_flag.gimbal_fuck_mode_flag = 1;
+        robot.robot_flag.gimbal_fuck_mode_flag = 0;
         robot.robot_flag.chassis_super_cap_enable_flag = 1;
 
       } else if (rc_right_switch == rc_sw_bottom) {
@@ -469,6 +470,7 @@ void gimbal_get_ctrl_way(void) {
           robot.spin_dir = !robot.spin_dir;
         }
         robot.weapon.ctrl_mode = _vision_ctrl;
+        robot.robot_flag.gimbal_fuck_mode_flag = 1;
       }
 
       if (robot.weapon.ctrl_mode == _vision_ctrl)

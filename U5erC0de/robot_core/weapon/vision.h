@@ -5,7 +5,7 @@
 #include HAL_INCLUDE
 #include gimbal_module_core_h
 
-#define INIT_SHOOT_SPEED 15.7f // 默认氮素
+#define INIT_SHOOT_SPEED 15.5f // 默认氮素   15.7
 #define MAX_SHOOT_SPEED 15.85f // 最高氮素
 #define MIN_SHOOT_SPEED 15.37f // 最低氮素
 #define VISION_COLOR 1         // bule 0,red 1

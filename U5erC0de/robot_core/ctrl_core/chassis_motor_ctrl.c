@@ -122,7 +122,7 @@ void dial_controller(float pos_loop_outputMAX) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////
-
+#if SELF_POWER_CTRL
 chassis_power_lim_ta power_a = {.max_total_out = 4.0f * 16384,
                                 .vxy_ratio = 1.0f,
                                 .vxy_output_max = 16384,
@@ -141,9 +141,8 @@ void self_power_ctrl(
   chassis_power_lim->max_total_out =
       4.0f * C620_OUTPUT_MAX; // 后面需要改,估计会寄
 
-  power_base_ratio = pid_calc(&power_base_ratio_pid,
-                              game_robot_status.chassis_power_limit * 1.2f,
-                              power_heat_data.chassis_power);
+  power_base_ratio =
+      pid_calc(&power_base_ratio_pid, 80 * 1.2f, power_heat_data.chassis_power);
   LIMIT_MIN_MAX(power_base_ratio, 0.f, 1.f);
 
   result_ratio = pid_calc(&power_limit_pid_Nban,
@@ -164,7 +163,7 @@ void self_power_ctrl(
   }
   chassis_power_lim->power_limit_ratio = result_ratio;
 }
-
+#endif
 /////
 
 /**
@@ -301,38 +300,37 @@ void wheel_controller(chassis_state_t *p_chassis_expt_state,
     total_out += all_chassis_motors[i].output;
   }
   /////////////////////////////////////////////////////////////////////
-  if (robot.robot_flag.self_power_ctrl) {
-    float limit_ratio = 0;
-    self_power_ctrl(&power_a);
-    if (total_out > power_a.max_total_out) {
-      limit_ratio = power_a.max_total_out / total_out;
-    } else {
-      limit_ratio = 1.0f;
-    }
-    for (uint8_t i = 0; i < 4; i++) {
-      all_chassis_motors[i].output = limit_ratio *
-                                     all_chassis_motors[i].output *
-                                     power_a.power_limit_ratio;
-    }
+#if SELF_POWER_CTRL
+  float limit_ratio = 0;
+  self_power_ctrl(&power_a);
+  if (total_out > power_a.max_total_out) {
+    limit_ratio = power_a.max_total_out / total_out;
   } else {
-    /////////////////////////////////////////////////////////////////////
-
-    for (uint8_t i = 0; i < 4; i++) {
-      pow_lim->raw_expt_Iq[i] = ecd2iq(all_chassis_motors[i].output);
-      pow_lim->expt_omega[i] =
-          (float)((all_chassis_motors[i].expt.speed_rpm) * 2 * PI / 60);
-      pow_lim->real_Iq[i] = ecd2iq(all_chassis_motors[i].real.current);
-      pow_lim->real_omega[i] =
-          (float)((all_chassis_motors[i].real.speed_rpm) * 2 * PI / 60);
-    }
-
-    // //
-    chassis_power_distributor(pow_lim, is_cap_enable);
-
-    for (uint8_t i = 0; i < 4; i++) {
-      all_chassis_motors[i].output = iq2ecd(pow_lim->set_Iq[i]);
-    }
+    limit_ratio = 1.0f;
   }
+  for (uint8_t i = 0; i < 4; i++) {
+    all_chassis_motors[i].output =
+        limit_ratio * all_chassis_motors[i].output * power_a.power_limit_ratio;
+  }
+#endif
+/////////////////////////////////////////////////////////////////////
+#if CAP_POWER_CTRL
+  for (uint8_t i = 0; i < 4; i++) {
+    pow_lim->raw_expt_Iq[i] = ecd2iq(all_chassis_motors[i].output);
+    pow_lim->expt_omega[i] =
+        (float)((all_chassis_motors[i].expt.speed_rpm) * 2 * PI / 60);
+    pow_lim->real_Iq[i] = ecd2iq(all_chassis_motors[i].real.current);
+    pow_lim->real_omega[i] =
+        (float)((all_chassis_motors[i].real.speed_rpm) * 2 * PI / 60);
+  }
+
+  // //
+  chassis_power_distributor(pow_lim, is_cap_enable);
+
+  for (uint8_t i = 0; i < 4; i++) {
+    all_chassis_motors[i].output = iq2ecd(pow_lim->set_Iq[i]);
+  }
+#endif
   /////////////////////////////////////////////////////////////////////
 }
 //

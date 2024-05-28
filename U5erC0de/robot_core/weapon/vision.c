@@ -31,7 +31,7 @@ float vision_pitch, vision_yaw;
 
 float MAX_PREDICT_T = 5.f;
 #define INIT_SHOOT_DELAY 0.30f
-float CONST_SHOOT_DELAY = 0.31f; // 0.25f; // 固定发射延时
+float CONST_SHOOT_DELAY = 0.305f; // 0.25f; // 固定发射延时 fire_config_debug[1]
 // 0807
 //->0.32	先0.3滞后,调高到0.32后过几小时又超前
 //  0806
@@ -189,8 +189,8 @@ float base_sum_yaw, base_sum_pitch;
 uint8_t identify_base_cnt = 0;
 float base_mode_yaw_offset = -0.0107f;
 float base_mode_pitch_offset = 0.0484;
-float base_mode_target_z0_offset = 0;   // 观测值比实际低了约0.2m
-float outpost_top_armor_offset = 0.312; // 观测值比实际低了约0.2m
+float base_mode_target_z0_offset = 0.08; // 观测值比实际低了约0.2m
+float outpost_top_armor_offset = 0.312;  //
 
 uint8_t get_vision_ctrl_base_mode(float *pitch_ang, float *yaw_ang,
                                   float *shooter_yaw_ang, float dt) {
@@ -295,12 +295,14 @@ bool base_mode_enable = false;
 bool reset_tracker_flag = false;
 extern attack_target_type_t attack_target_type;
 uint8_t is_play;
+uint8_t aaa_teste;
 void send_vision_request(float current_roll, float current_pitch,
                          float current_yaw) {
 
   vision_request.header = VISION_UART_REQ_SOF;
-  vision_request.base_mode = (attack_target_type == base_mid_armor ||
-                              attack_target_type == base_top_armor);
+  vision_request.base_mode =
+      aaa_teste; //(attack_target_type == base_mid_armor ||
+                 //  attack_target_type == base_top_armor);
 
   vision_request.s_timestamp = robot.timestep;
   vision_request.rest_tracker = reset_tracker_flag;

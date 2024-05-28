@@ -27,6 +27,8 @@ extern UART_HandleTypeDef huart6;
 #define RIGHT_HEAT 1
 #define BACK_HEAT 2
 #define LEFT_HEAT 3
+#define SELF_RED 0
+#define SELF_BLUE 1
 // ext_client_custom_graphic_seven_t test_data;
 interaction_figure_2_t spin_fric_dot;
 interaction_figure_3_t dynamic_layer_data_extra;
@@ -39,9 +41,10 @@ extern cap_data_t cap_data;
 
 int cap_len_ui = 630;
 int HP_len_ui = 284;
-
-uint16_t max_spin_speed_len_ui = 200;
-uint16_t max_move_speed_len_ui = 200;
+#define SHOOTER_DELAY 0.1
+#define ADD_ANGLE 60
+uint16_t max_spin_speed_len_ui = 600;
+uint16_t max_move_speed_len_ui = 600;
 
 uint16_t UI_count;
 
@@ -70,12 +73,16 @@ extern ext_bullet_remaining_t bullet_remaining;
 uint16_t robot_HP_data_RED[7];
 uint16_t robot_HP_data_BLUE[7];
 uint16_t RED_outpost;
+uint16_t RED_base;
 uint16_t BLUE_outpost;
+uint16_t BLUE_base;
 uint16_t robot_HP_max_RED[7];
 uint16_t robot_HP_max_BLUE[7];
 uint16_t show_robot_HP;
 uint16_t show_robot_HP_max;
 uint16_t fov_point[4] = {712, 750, 1230, 287};
+uint8_t show_flag;
+uint8_t show_count;
 
 void input_HP(void);
 void test_char(void);
@@ -94,13 +101,13 @@ void init_UI(void) {
 
   Static_UI(1, GRAPHIC_LINE, COLOR_MAIN_RB, 1600, 550, 1600, 620,
             5); // 底盘指示
-  Static_UI(2, GRAPHIC_LINE, COLOR_GREEN, 1620, 400, 1620, 600, 12); // 移动速度
-  Static_UI(3, GRAPHIC_LINE, COLOR_GREEN, 1700, 400, 1700, 600,
+  Static_UI(2, GRAPHIC_LINE, COLOR_GREEN, 1620, 200, 1620, 800, 12); // 移动速度
+  Static_UI(3, GRAPHIC_LINE, COLOR_GREEN, 1700, 200, 1700, 800,
             12); // 小陀螺速度
-  Static_UI(4, GRAPHIC_SQUARE, COLOR_ORANGE, fov_point[0], fov_point[1],
-            fov_point[2], fov_point[3], 2);
-  Static_UI(5, GRAPHIC_LINE, COLOR_PINK, 200, 550, 200, 620,
-            5); // 当前攻击模式
+  Static_UI(4, GRAPHIC_SQUARE, COLOR_CYAN, fov_point[0], fov_point[1],
+            fov_point[2], fov_point[3], 2); // 命中  相机角度
+  Static_UI(5, GRAPHIC_LINE, COLOR_PINK, 645, 100, 1270, 100,
+            12); // 计时器
   Static_UI(6, GRAPHIC_LINE, COLOR_MAIN_RB, 900, 490, 1020, 590,
             8); // 摩擦轮指示
   Static_UI(7, GRAPHIC_SQUARE, COLOR_WHITE, 640, 190, 1280, 210, 2); // 电容框
@@ -130,13 +137,16 @@ void init_UI(void) {
   Static_UI(18, GRAPHIC_LINE, COLOR_GREEN, 1280, 0, 1150, 450, 4);
   Static_UI(19, GRAPHIC_LINE, COLOR_CYAN, 950, 110, 950, 900, 1);
   // 瞄准刻度线
-  Static_UI(20, GRAPHIC_CIRCLE, COLOR_PINK, 200, 550, 200, 20,
-            2); // 当前攻击模式
+  Static_UI(20, GRAPHIC_SQUARE, COLOR_WHITE, 640, 90, 1280, 110,
+            2); // 计时器框
+                // Static_UI(20, GRAPHIC_CIRCLE, COLOR_PINK, 200, 550, 200, 20,
+                //           2); // 当前攻击模式
   // 视场角
 
   // test_char();
 }
-
+uint32_t now_ticking_time;
+uint32_t ticking_time;
 void update_UI(void) { // 静态图层的设置
 
   UI_count++;
@@ -158,34 +168,9 @@ void update_UI(void) { // 静态图层的设置
                     modify(6,test_status,COLOR_CYAN,0,0);
                     1.序号 2.出现 3.颜色 4.x 5.y
     */
-    // send_char(3, 2, 1100, 650, COLOR_GREEN, 25, 2, spin_text); // 小陀螺指示
-    if (robot.robot_flag.vt_config_flag) {
+    // send_char(3, 2, 1100, 650, COLOR_GREEN, 25, 2, spin_text); //
+    // 小陀螺指示
 
-    } else {
-      if (attack_target_type == outpost_spin_armor) {
-        attack_mode_angle = 0;
-        modify(5, 2, COLOR_MAIN_RB,
-               (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
-               (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
-
-      } else if (attack_target_type == outpost_top_armor) {
-        attack_mode_angle = PI / 2;
-        modify(5, 2, COLOR_MAIN_RB,
-               (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
-               (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
-      } else if (attack_target_type == base_mid_armor ||
-                 attack_target_type == base_top_armor) {
-        attack_mode_angle = PI;
-        modify(5, 2, COLOR_MAIN_RB,
-               (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
-               (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
-      } else if (attack_target_type == other) {
-        attack_mode_angle = 1.5 * PI;
-        modify(5, 2, COLOR_MAIN_RB,
-               (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
-               (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
-      }
-    }
     if (vision_ctrl_data.target_found) {
       modify(4, 0, COLOR_MAIN_RB, fov_point[2], fov_point[3]);
     } else {
@@ -197,7 +182,16 @@ void update_UI(void) { // 静态图层的设置
     } else {
       modify(6, 1, COLOR_MAIN_RB, 0, 0);
     }
+    input_HP();
+    if (show_flag) {
+      modify(6, 1, COLOR_ORANGE, 0, 0);
+      show_count++;
+    }
 
+    if (show_count > 15) {
+      show_count = 0;
+      show_flag = 0;
+    }
     if (robot.robot_flag.chassis_super_cap_enable_flag == 1)
       modify(0, 2, COLOR_CYAN,
              645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 200);
@@ -205,11 +199,14 @@ void update_UI(void) { // 静态图层的设置
       modify(0, 2, COLOR_WHITE,
              645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 200);
     modify(2, 2, COLOR_CYAN, 1620,
-           400 + (robot.base_speed / MAX_MOVE_SPEED) * max_move_speed_len_ui);
+           200 + (robot.base_speed / MAX_MOVE_SPEED) * max_move_speed_len_ui);
 
     modify(3, 2, COLOR_CYAN, 1700,
-           400 + (robot.spin_speed / MAX_SPIN_SPEED) * max_spin_speed_len_ui);
+           200 + (robot.spin_speed / MAX_SPIN_SPEED) * max_spin_speed_len_ui);
 
+    ticking_time = 10000 - ((HAL_GetTick()) % 10000);
+
+    modify(5, 2, COLOR_ORANGE, 645 + (ticking_time / 10000) * cap_len_ui, 100);
     send_7(dynamic_layer_data1); // 勿动
     //		modify(4,2,COLOR_PURPLE,1000+BAR/2+HP_len_ui,875-WIDTH-BAR/2);
     // END DYNAMIC
@@ -233,89 +230,61 @@ void update_UI(void) { // 静态图层的设置
            (uint16_t)(550 + 70 * cos_yaw));
     modify(0, 1, COLOR_YELLOW,
            645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 250);
-    // modify(4, 1, COLOR_PURPLE, (uint16_t)CLAMP0((755 + show_robot_HP), 1920),
+    // modify(4, 1, COLOR_PURPLE, (uint16_t)CLAMP0((755 +
+    // show_robot_HP), 1920),
     //        837);
     modify(2, 1, COLOR_CYAN, 1620,
            400 + (robot.base_speed / MAX_MOVE_SPEED) * max_move_speed_len_ui);
 
     modify(3, 1, COLOR_CYAN, 1700,
            400 + (robot.spin_speed / MAX_SPIN_SPEED) * max_spin_speed_len_ui);
-    if (attack_target_type == outpost_spin_armor) {
-      attack_mode_angle = 0;
-      modify(5, 1, COLOR_MAIN_RB,
-             (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
-             (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
-
-    } else if (attack_target_type == outpost_top_armor) {
-      attack_mode_angle = PI / 2;
-      modify(5, 1, COLOR_MAIN_RB,
-             (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
-             (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
-    } else if (attack_target_type == base_mid_armor ||
-               attack_target_type == base_top_armor) {
-      attack_mode_angle = PI;
-      modify(5, 1, COLOR_MAIN_RB,
-             (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
-             (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
-    } else if (attack_target_type == other) {
-      attack_mode_angle = 1.5 * PI;
-      modify(5, 1, COLOR_MAIN_RB,
-             (uint16_t)(200 - 70 * sinf(attack_mode_angle)),
-             (uint16_t)(550 + 70 * cosf(attack_mode_angle)));
-    }
+    modify(5, 1, COLOR_ORANGE, 645 + (ticking_time / 10000) * cap_len_ui, 100);
     send_7(dynamic_layer_data1); // 勿动
   }
 }
 
+bool self_color;
+uint16_t attack_aim_hp;
+uint16_t last_attack_aim_hp;
+
 void input_HP(void) {
-  uint8_t i;
-  memcpy(robot_HP_data_RED, (void *)&(game_robot_HP.red_1_robot_HP),
-         sizeof(uint16_t) * 7);
-  memcpy(robot_HP_data_BLUE, (void *)(&(game_robot_HP.red_1_robot_HP) + 8),
-         sizeof(uint16_t) * 7);
+
+  self_color = referee_info.robot_id < 100 ? SELF_BLUE : SELF_RED;
   RED_outpost = game_robot_HP.red_outpost_HP;
+  RED_base = game_robot_HP.red_base_HP;
   BLUE_outpost = game_robot_HP.blue_outpost_HP;
-
-  // 用一直更新的方法知道大概的血量上限
-  for (i = 0; i < 7; i++) {
-    robot_HP_max_RED[i] = (robot_HP_max_RED[i] < robot_HP_data_RED[i])
-                              ? robot_HP_data_RED[i]
-                              : robot_HP_max_RED[i];
-    robot_HP_max_BLUE[i] = (robot_HP_max_BLUE[i] < robot_HP_data_BLUE[i])
-                               ? robot_HP_data_BLUE[i]
-                               : robot_HP_max_BLUE[i];
-  }
-
-  if (vision_ctrl_data.target_found) {
-    if (vision_ctrl_data.id_num == 1 || vision_ctrl_data.id_num == 3 ||
-        vision_ctrl_data.id_num == 4 || vision_ctrl_data.id_num == 5) {
-      i = vision_ctrl_data.id_num;
-
-      if (game_robot_status.robot_id > 100) { // 判断己方颜色 大于一百为蓝
-        show_robot_HP = robot_HP_data_RED[i - 1];
-        show_robot_HP_max = robot_HP_max_RED[i - 1];
-      } else {
-        show_robot_HP = robot_HP_data_BLUE[i - 1];
-        show_robot_HP_max = robot_HP_max_BLUE[i - 1];
+  BLUE_base = game_robot_HP.blue_base_HP;
+  if (self_color) {
+    if (BLUE_outpost > 0) {
+      attack_aim_hp = BLUE_outpost;
+      if (last_attack_aim_hp - attack_aim_hp >= 200) {
+        show_flag = 1;
+        show_count = 0;
       }
-    } else if (vision_ctrl_data.id_num == 6) {
-      if (game_robot_status.robot_id > 100)
-        show_robot_HP = robot_HP_data_RED[5];
-      else
-        show_robot_HP = robot_HP_data_BLUE[5]; // 哨兵
-      show_robot_HP_max = 1000;
-    } else if (vision_ctrl_data.id_num == 0) {
-      if (game_robot_status.robot_id > 100)
-        show_robot_HP = RED_outpost;
-      else
-        show_robot_HP = BLUE_outpost;
-      show_robot_HP_max = 1500; // outpost max HP
+      last_attack_aim_hp = attack_aim_hp;
     } else {
-      show_robot_HP = 0;
-      show_robot_HP_max = 100;
+      attack_aim_hp = BLUE_base;
+      if (last_attack_aim_hp - attack_aim_hp >= 200) {
+        show_flag = 1;
+        show_count = 0;
+      }
+      last_attack_aim_hp = attack_aim_hp;
     }
   } else {
-    show_robot_HP = 0;
-    show_robot_HP_max = 100;
+    if (RED_outpost > 0) {
+      attack_aim_hp = RED_outpost;
+      if (last_attack_aim_hp - attack_aim_hp >= 200) {
+        show_flag = 1;
+        show_count = 0;
+      }
+      last_attack_aim_hp = attack_aim_hp;
+    } else {
+      attack_aim_hp = RED_base;
+      if (last_attack_aim_hp - attack_aim_hp >= 200) {
+        show_flag = 1;
+        show_count = 0;
+      }
+      last_attack_aim_hp = attack_aim_hp;
+    }
   }
 }

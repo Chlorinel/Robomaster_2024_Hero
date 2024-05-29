@@ -43,8 +43,8 @@ int cap_len_ui = 630;
 int HP_len_ui = 284;
 #define SHOOTER_DELAY 0.1
 #define ADD_ANGLE 60
-uint16_t max_spin_speed_len_ui = 600;
-uint16_t max_move_speed_len_ui = 600;
+uint16_t max_spin_speed_len_ui = 200;
+uint16_t max_move_speed_len_ui = 200;
 
 uint16_t UI_count;
 
@@ -106,7 +106,7 @@ void init_UI(void) {
             12); // 小陀螺速度
   Static_UI(4, GRAPHIC_SQUARE, COLOR_CYAN, fov_point[0], fov_point[1],
             fov_point[2], fov_point[3], 2); // 命中  相机角度
-  Static_UI(5, GRAPHIC_LINE, COLOR_PINK, 645, 100, 1270, 100,
+  Static_UI(5, GRAPHIC_LINE, COLOR_WHITE, 645, 100, 1270, 100,
             12); // 计时器
   Static_UI(6, GRAPHIC_LINE, COLOR_MAIN_RB, 900, 490, 1020, 590,
             8); // 摩擦轮指示
@@ -114,30 +114,30 @@ void init_UI(void) {
   Static_UI(8, GRAPHIC_SQUARE, COLOR_WHITE, 1610, 390, 1710, 610,
             2); // 移动速度框
   Static_UI(9, GRAPHIC_LINE, COLOR_MAIN_RB, 900, 640, 1000, 640,
-            1); // 6m前哨站顶部
+            2); // 6m前哨站顶部
   Static_UI(10, GRAPHIC_LINE, COLOR_MAIN_RB, 850, 485, 1050, 485,
-            1); // 13.7m前哨站顶部横线
+            2); // 13.7m前哨站顶部横线
   Static_UI(11, GRAPHIC_LINE, COLOR_MAIN_RB, 800, 300, 1100, 300,
-            1); // 21m基地顶部绿灯
+            2); // 21m基地顶部绿灯
   Static_UI(12, GRAPHIC_CIRCLE, COLOR_YELLOW, 1600, 550, 70, 0,
             2); // 底盘指示圆
 
-  Static_UI(13, GRAPHIC_LINE, COLOR_MAIN_RB, 960, 568, 1040, 568,
-            1); // 9m前哨站顶部横线
+  Static_UI(13, GRAPHIC_LINE, COLOR_MAIN_RB, 960, 543, 1040, 543,
+            2); // 10m前哨站顶部横线
 
   Static_UI(14, GRAPHIC_LINE, COLOR_MAIN_RB, 920, 503, 980, 503,
-            1); // 8m环高基地顶部绿灯
+            2); // 8m环高基地顶部绿灯
 
-  Static_UI(15, GRAPHIC_LINE, COLOR_WHITE, 930, 110, 930, 900, 1);
+  Static_UI(15, GRAPHIC_LINE, COLOR_WHITE, 925, 110, 925, 900, 1);
   // 8m前哨站旋转预瞄右
-  Static_UI(16, GRAPHIC_LINE, COLOR_WHITE, 970, 110, 970, 900, 1);
+  Static_UI(16, GRAPHIC_LINE, COLOR_WHITE, 965, 110, 965, 900, 1);
   // 8m前哨站旋转预瞄左
 
   Static_UI(17, GRAPHIC_LINE, COLOR_GREEN, 580, 0, 730, 450, 4);
   Static_UI(18, GRAPHIC_LINE, COLOR_GREEN, 1280, 0, 1150, 450, 4);
-  Static_UI(19, GRAPHIC_LINE, COLOR_CYAN, 950, 110, 950, 900, 1);
+  Static_UI(19, GRAPHIC_LINE, COLOR_CYAN, 945, 110, 945, 900, 1);
   // 瞄准刻度线
-  Static_UI(20, GRAPHIC_SQUARE, COLOR_WHITE, 640, 90, 1280, 110,
+  Static_UI(20, GRAPHIC_SQUARE, COLOR_WHITE, 640, 820, 1280, 840,
             2); // 计时器框
                 // Static_UI(20, GRAPHIC_CIRCLE, COLOR_PINK, 200, 550, 200, 20,
                 //           2); // 当前攻击模式
@@ -184,7 +184,7 @@ void update_UI(void) { // 静态图层的设置
     }
     input_HP();
     if (show_flag) {
-      modify(6, 1, COLOR_ORANGE, 0, 0);
+      modify(4, 1, COLOR_ORANGE, 0, 0);
       show_count++;
     }
 
@@ -199,14 +199,14 @@ void update_UI(void) { // 静态图层的设置
       modify(0, 2, COLOR_WHITE,
              645 + (cap_data.cap_voltage / VCAP_MAX) * cap_len_ui, 200);
     modify(2, 2, COLOR_CYAN, 1620,
-           200 + (robot.base_speed / MAX_MOVE_SPEED) * max_move_speed_len_ui);
+           400 + (robot.base_speed / MAX_MOVE_SPEED) * max_move_speed_len_ui);
 
     modify(3, 2, COLOR_CYAN, 1700,
-           200 + (robot.spin_speed / MAX_SPIN_SPEED) * max_spin_speed_len_ui);
+           400 + (robot.spin_speed / MAX_SPIN_SPEED) * max_spin_speed_len_ui);
 
     ticking_time = 10000 - ((HAL_GetTick()) % 10000);
 
-    modify(5, 2, COLOR_ORANGE, 645 + (ticking_time / 10000) * cap_len_ui, 100);
+    modify(5, 2, COLOR_CYAN, 645 + (ticking_time / 10000) * cap_len_ui, 830);
     send_7(dynamic_layer_data1); // 勿动
     //		modify(4,2,COLOR_PURPLE,1000+BAR/2+HP_len_ui,875-WIDTH-BAR/2);
     // END DYNAMIC
@@ -238,7 +238,7 @@ void update_UI(void) { // 静态图层的设置
 
     modify(3, 1, COLOR_CYAN, 1700,
            400 + (robot.spin_speed / MAX_SPIN_SPEED) * max_spin_speed_len_ui);
-    modify(5, 1, COLOR_ORANGE, 645 + (ticking_time / 10000) * cap_len_ui, 100);
+    modify(5, 1, COLOR_CYAN, 645 + (ticking_time / 10000) * cap_len_ui, 830);
     send_7(dynamic_layer_data1); // 勿动
   }
 }

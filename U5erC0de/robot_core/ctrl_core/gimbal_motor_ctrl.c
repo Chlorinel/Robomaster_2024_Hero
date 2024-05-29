@@ -17,7 +17,7 @@ gimbal_motors_t gimbal_motors = {0};
 // float pitch_kpid_vel[3]={1500,0.2,150};
 // float pitch_kpid_pos[3] = {900, 1, 50};
 // float pitch_kpid_vel[3] = {1700, 5, 0};
-float pitch_kpid_pos[3] = {600, 2, 40};
+float pitch_kpid_pos[3] = {700, 2, 40};
 float pitch_kpid_vel[3] = {600, 0, 0};
 kalman1_state i_pitch_filter;
 /**s
@@ -113,7 +113,6 @@ gimbal_state_t *fetch_robot_coordinate_system(gimbal_state_t *offset_state) {
       .roll = 0, .pitch = motor_pitch, .yaw = motor_yaw};
   clone(robot_rpy_s, robot_rpy);
   return &robot_rpy_s;
-
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,7 +180,9 @@ bool f_is_friction_wheel_on(void) {
 
 #include "./robot_core/weapon/vision.h"
 void update_shooter_motor_vel(float *expt_v_shooter) {
-
+  if (robot.weapon.real_v_shooter > 16) {
+    *expt_v_shooter -= 0.15;
+  }
   extern float real_vel_16;
   update_cur_v0_filter();
   float cur_v0 = get_cur_v0();
@@ -189,8 +190,8 @@ void update_shooter_motor_vel(float *expt_v_shooter) {
   // 发射机构转速限幅
   if (*expt_v_shooter > 21)
     *expt_v_shooter = 21;
-  if (*expt_v_shooter < 15)
-    *expt_v_shooter = 15;
+  if (*expt_v_shooter < 17)
+    *expt_v_shooter = 17;
 }
 
 /**

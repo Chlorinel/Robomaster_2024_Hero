@@ -210,8 +210,8 @@ float outpost_vyaw_level1 = 2.5;
 
 float const_outpost_R = 0.270; // 0.29; // 0.27 // 0.226;
 
-float offset_theta = 30; // 不击打刚出来那一段 //0
-                         // //fire_config_debug[0];
+float offset_theta = 0; // 不击打刚出来那一段 //0
+                        // //fire_config_debug[0];
 
 float k_theta_omega = 10; // 云台跟随角度振幅与云台跟随角频率之积//5
 float aim_mid = 0.001;
@@ -231,7 +231,7 @@ float gimbal_follow_boudary; // 云台yaw最大摆动幅度
 float gimbal_follow_theta;
 
 extern float shooter_yaw_offset, shooter_pitch_offset;
-float debug[12] = {0}, debu[12];
+float debug[12] = {0}, debu[12] = {0};
 target_spec_t target;
 target_spec_t center_target;
 ballistic_sol_t center_solution;
@@ -289,13 +289,14 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       dz = 0;
       r1 = LPF_update(&rd_filter,
                       r1); // const_outpost_R; // LPF_update(&rd_filter, r1);
-      rd_filter.fltr_val = const_outpost_R;
+      // rd_filter.fltr_val = const_outpost_R;
       r2 = r1;
 
       // float outpost_armor_v = vision_ctrl_data.v_yaw * vision_ctrl_data.r1;
       // LPF_update(&outpost_armor_v_filter, outpost_armor_v);
       // vyaw = outpost_armor_v / const_outpost_R;
       // CLAMP_MAX(vyaw, 3);
+
       vyaw = LPF_update(&vyaw_filter, vyaw);
 
       yaw_filter.fc = vyaw;
@@ -321,8 +322,8 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
 
     else if (attack_target_type == base_mid_armor ||
              attack_target_type == base_top_armor) {
-      extern bool had_find_base;
-      if (last_xc == 0 && xc != 0 && had_find_base != 1) {
+
+      if (last_xc == 0 && xc != 0 ) {
         xc = LPF_update(&base_xc_filter, xc);
         xc = LPF_update(&base_xc_filter, xc);
         xc = LPF_update(&base_xc_filter, xc);
@@ -426,6 +427,7 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
             debu[3] = vyaw;
             debu[4] = armor_yaw;
             debu[5] = center_theta;
+
             est_x = xc - rd_filter.fltr_val * cos(armor_yaw);
 
             center_est_x = xc;
@@ -433,6 +435,7 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
             center_est_y = yc;
 
             est_z = _est_z;
+            debu[6] = est_z;
           } else { // 非半径较小的装甲板,就不打了
             aim_spin_status = SPIN_WAIT;
           }
@@ -455,8 +458,8 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       aim_spin_status = STOP;
       est_x = xc - r1 * cos(yaw);
       est_y = yc - r1 * sin(yaw);
-      est_z = zc + zc_offest;
-      // est_z = real_z;
+      est_z = zc;
+      //       est_z = real_z;
 
       armor_theta_diff = get_delta_ang(yaw, center_theta, 2 * PI);
     }
@@ -486,10 +489,8 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       center_distance_xy =
           sqrtf(center_est_x * center_est_x + center_est_y * center_est_y) -
           rd_filter.fltr_val;
-      if (1) {
-        distance_xy += distance_offset;
-      }
-      // distance_xy = real_distance;
+
+      //       distance_xy = real_distance;
       if (is_center_fire) {
         if (aim_spin_status == STOP) {
           *yaw_ang = atan2f(est_y, est_x) + _shooter_yaw_offset;
@@ -519,7 +520,7 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
                                      cos(gimbal_real_state.roll);
       projectile_solve(cur_v0, &target, &solution);
       projectile_solve(cur_v0, &center_target, &center_solution);
-//      extern vision_ctrl_t vision_request;
+      //      extern vision_ctrl_t vision_request;
       if (0) {
 
         if (center_solution.solution_num > 0) {
@@ -551,22 +552,32 @@ uint8_t get_vision_ctrl(float *pitch_ang, float *yaw_ang,
       //			est_y = 0;
       //			est_z = 0;
     }
-    float initial_vector[3] = {cos(temp_pitch_angle) * cos(temp_yaw_angle),
-                               cos(temp_pitch_angle) * sin(temp_yaw_angle),
-                               sin(temp_pitch_angle)};
-    Matrix3x3 R_initial = rotation_matrix(0, temp_pitch_angle, temp_yaw_angle);
-    float rotated_initial_vector[3] = {R_initial.m[2][0], R_initial.m[2][1],
-                                       R_initial.m[2][2]};
-    Matrix3x3 R_roll = rotation_matrix(vision_request.roll, 0, 0);
-    float rotated_vector[3] = {0, 0, 0};
-    for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        rotated_vector[i] += R_roll.m[i][j] * rotated_initial_vector[j];
-      }
-    }
+    //    float initial_vector[3] = {sign(temp_pitch_angle) *
+    //    cos(temp_pitch_angle) *
+    //                                   sign(temp_yaw_angle) *
+    //                                   cos(temp_yaw_angle),
+    //                               sign(temp_pitch_angle) *
+    //                               cos(temp_pitch_angle) *
+    //                                   sin(temp_yaw_angle),
+    //                               sin(temp_pitch_angle)};
+    //
+    //    Matrix3x3 R_initial = rotation_matrix(0, temp_pitch_angle,
+    //    temp_yaw_angle); float rotated_initial_vector[3] = {R_initial.m[2][0],
+    //    R_initial.m[2][1],
+    //                                       R_initial.m[2][2]};
+    //    Matrix3x3 R_roll = rotation_matrix(0, 0, 0);
+    //    float rotated_vector[3] = {0, 0, 0};
+    //    for (int i = 0; i < 3; ++i) {
+    //      for (int j = 0; j < 3; ++j) {
+    //        rotated_vector[i] += R_roll.m[i][j] * rotated_initial_vector[j];
+    //      }
+    //    }
 
-    approximate_euler_from_vector(rotated_vector[0], rotated_vector[1],
-                                  rotated_vector[2], pitch_ang, yaw_ang);
+    //    approximate_euler_from_vector(rotated_vector[0], rotated_vector[1],
+    //                                  rotated_vector[2], pitch_ang, yaw_ang);
+    *pitch_ang = temp_pitch_angle;
+    *yaw_ang = temp_yaw_angle;
+    *shooter_yaw_ang = *yaw_ang;
 
     predict_time += dt;
     return VISION_OK;
@@ -611,7 +622,7 @@ float shootable_yaw_angle = 0.65;
 float shootable_pitch_angle = 0.35;
 
 float shootable_angle_p = 10;
-float shootable_angle_n = -10;
+float shootable_angle_n = 10;
 bool is_enter_shootable_angle;
 
 // float shootable_angle=5;
@@ -648,7 +659,7 @@ void get_vision_suggest_fire(gimbal_state_t *gimbal_expt_state,
       (aim_spin_status == STOP);
   debug[3] = deg2rad(shootable_angle_p);
   debug[4] = armor_theta_diff;
-  debug[5] = -deg2rad(shootable_angle_p);
+  debug[5] = deg2rad(shootable_pitch_angle);
   yaw_lllllll = shoot_delta_yaw_angle - deg2rad(shootable_yaw_angle);
   yaw_lll = shoot_delta_pitch_angle - deg2rad(shootable_pitch_angle);
 

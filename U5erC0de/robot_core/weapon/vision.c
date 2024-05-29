@@ -195,75 +195,83 @@ float outpost_top_armor_offset = 0.312;  //
 uint8_t get_vision_ctrl_base_mode(float *pitch_ang, float *yaw_ang,
                                   float *shooter_yaw_ang, float dt) {
   extern bool base_mode_enable; // 抽象吧
-  static uint8_t i = 0;
+
+  extern gimbal_state_t vision_ctrl_state;
+  // static uint8_t i = 0;
   if (base_mode_enable == false) {
-    i = 0;
+    //  i = 0;
     had_find_base = false;
     return VISION_NOTARGET;
   }
-  // 开了基地模式
-  if (i == num111)
-    i = 0;
-  if (vision_ctrl_data.target_found == true) { // 有收到零琐的数据帧
-    vision_base_mode_data[i].tick = HAL_GetTick();
-    get_vision_ctrl(
-        &vision_base_mode_data[i].pitch_ang, &vision_base_mode_data[i].yaw_ang,
-        &vision_base_mode_data[i].shoot_yaw_ang, 1.f / hs_tim_freq, 0);
-    i++;
-  }
+  robot.weapon._is_vision_ok = get_vision_ctrl(
+      &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
+      &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq, robot.is_center_fire);
+  // // 开了基地模式
+  // if (i == num111)
+  //   i = 0;
+  // if (vision_ctrl_data.target_found == true) { // 有收到零琐的数据帧
+  //   vision_base_mode_data[i].tick = HAL_GetTick();
+  //   get_vision_ctrl(
+  //       &vision_base_mode_data[i].pitch_ang,
+  //       &vision_base_mode_data[i].yaw_ang,
+  //       &vision_base_mode_data[i].shoot_yaw_ang, 1.f / hs_tim_freq, 0);
+  //   i++;
+  // }
 
-  extern gimbal_state_t gimbal_real_state;
-  if (i == num111 &&
-      vision_base_mode_data[num111 - 1].tick - vision_base_mode_data[0].tick <
-          MAX_time) { // 得连续收到多个包才判断一次
-    for (uint8_t j = 0; j < num111; j++) {
-      float select_yaw = vision_base_mode_data[j].yaw_ang;
-      float select_pitch = vision_base_mode_data[j].pitch_ang;
-      base_sum_yaw = 0;
-      base_sum_pitch = 0;
-      identify_base_cnt = 0;
-      if (get_delta_ang(select_yaw, gimbal_real_state.yaw, 2 * PI) <
-          deg2rad(MAX_yaw_error_in_base_mode)) {
-        base_sum_yaw += select_yaw;
-        base_sum_pitch += select_pitch;
-        identify_base_cnt++;
-      }
-    }
-    if (identify_base_cnt != 0) {
-      extern float shooter_yaw_offset, shooter_pitch_offset;
-      base_mode_aim_yaw = range_map(base_sum_yaw / identify_base_cnt, -PI, PI) -
-                          shooter_yaw_offset + base_mode_yaw_offset;
-      base_mode_aim_pitch =
-          range_map(base_sum_pitch / identify_base_cnt, -PI, PI) -
-          shooter_pitch_offset + base_mode_pitch_offset;
-      *yaw_ang = base_mode_aim_yaw;
-      *shooter_yaw_ang = base_mode_aim_yaw;
-      *pitch_ang = base_mode_aim_pitch;
-      had_find_base = true;
-      return VISION_OK;
-    } else if (had_find_base == false) // 未发现过基地
-    {
-      base_mode_aim_yaw = 0;
-      base_mode_aim_pitch = 0;
-      return VISION_NOTARGET;
-    }
-  } else if (had_find_base == true) {
-    if (HAL_GetTick() - vision_base_mode_data[num111 - 1].tick <
-        MAX_track_time) { // 2秒内连续发现有基地,就开轰
-      *yaw_ang = base_mode_aim_yaw;
-      *shooter_yaw_ang = base_mode_aim_yaw;
-      *pitch_ang = base_mode_aim_pitch;
-      return VISION_OK;
-    } else { // 超时清零
-      had_find_base = false;
-      return VISION_NOTARGET;
-    }
-  } else {
-    base_mode_aim_yaw = 0;
-    base_mode_aim_pitch = 0;
-    return VISION_NOTARGET;
-  }
-  return VISION_NOTARGET;
+  // extern gimbal_state_t gimbal_real_state;
+  // if (i == num111 &&
+  //     vision_base_mode_data[num111 - 1].tick - vision_base_mode_data[0].tick
+  //     <
+  //         MAX_time) { // 得连续收到多个包才判断一次
+  //   for (uint8_t j = 0; j < num111; j++) {
+  //     float select_yaw = vision_base_mode_data[j].yaw_ang;
+  //     float select_pitch = vision_base_mode_data[j].pitch_ang;
+  //     base_sum_yaw = 0;
+  //     base_sum_pitch = 0;
+  //     identify_base_cnt = 0;
+  //     if (get_delta_ang(select_yaw, gimbal_real_state.yaw, 2 * PI) <
+  //         deg2rad(MAX_yaw_error_in_base_mode)) {
+  //       base_sum_yaw += select_yaw;
+  //       base_sum_pitch += select_pitch;
+  //       identify_base_cnt++;
+  //     }
+  //   }
+  //   if (identify_base_cnt != 0) {
+  //     extern float shooter_yaw_offset, shooter_pitch_offset;
+  //     base_mode_aim_yaw = range_map(base_sum_yaw / identify_base_cnt, -PI,
+  //     PI) -
+  //                         shooter_yaw_offset + base_mode_yaw_offset;
+  //     base_mode_aim_pitch =
+  //         range_map(base_sum_pitch / identify_base_cnt, -PI, PI) -
+  //         shooter_pitch_offset + base_mode_pitch_offset;
+  //     *yaw_ang = base_mode_aim_yaw;
+  //     *shooter_yaw_ang = base_mode_aim_yaw;
+  //     *pitch_ang = base_mode_aim_pitch;
+  //     had_find_base = true;
+  //     return VISION_OK;
+  //   } else if (had_find_base == false) // 未发现过基地
+  //   {
+  //     base_mode_aim_yaw = 0;
+  //     base_mode_aim_pitch = 0;
+  //     return VISION_NOTARGET;
+  //   }
+  // } else if (had_find_base == true) {
+  //   if (HAL_GetTick() - vision_base_mode_data[num111 - 1].tick <
+  //       MAX_track_time) { // 2秒内连续发现有基地,就开轰
+  //     *yaw_ang = base_mode_aim_yaw;
+  //     *shooter_yaw_ang = base_mode_aim_yaw;
+  //     *pitch_ang = base_mode_aim_pitch;
+  //     return VISION_OK;
+  //   } else { // 超时清零
+  //     had_find_base = false;
+  //     return VISION_NOTARGET;
+  //   }
+  // } else {
+  //   base_mode_aim_yaw = 0;
+  //   base_mode_aim_pitch = 0;
+  //   return VISION_NOTARGET;
+  // }
+  // return VISION_NOTARGET;
 }
 
 // 清除标识位
@@ -300,9 +308,8 @@ void send_vision_request(float current_roll, float current_pitch,
                          float current_yaw) {
 
   vision_request.header = VISION_UART_REQ_SOF;
-  vision_request.base_mode =
-      aaa_teste; //(attack_target_type == base_mid_armor ||
-                 //  attack_target_type == base_top_armor);
+  vision_request.base_mode = (attack_target_type == base_mid_armor ||
+                              attack_target_type == base_top_armor);
 
   vision_request.s_timestamp = robot.timestep;
   vision_request.rest_tracker = reset_tracker_flag;

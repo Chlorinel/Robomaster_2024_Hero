@@ -72,7 +72,7 @@ typedef struct {
   bool spin_dir;
   float vx, vy, wz;
   float v_yaw, v_pitch;
-
+  bool base_offset_in;
   float expt_delta_yaw;
   float real_yaw;
   // flt	//in rad

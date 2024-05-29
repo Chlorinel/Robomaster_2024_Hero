@@ -39,7 +39,7 @@ uint8_t contral_conut = 0;
 robot_ctrl_t robot = {
     .ctrl_mode = 0,
     .weapon.expt_front_v_shooter = 19,
-    .weapon.expt_back_v_shooter = 17.43, // gen2:17.9000015 //白：17.43
+    .weapon.expt_back_v_shooter = 19, // gen2:17.9000015 //白：17.43   19
     .weapon.real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.last_real_v_shooter = INIT_SHOOT_SPEED,
     .weapon.ctrl_mode = _manual_ctrl,
@@ -166,7 +166,7 @@ float delta_yaw_ang, delta_pitch_ang;
 
 extern gimbal_state_t gimbal_real_state;
 extern gimbal_state_t gimbal_expt_state;
- bool base_mode_enable_flag = false;
+bool base_mode_enable_flag = false;
 void gimbal_get_ctrl_way(void) {
 
   if (robot.ctrl_mode == 0) {
@@ -287,9 +287,11 @@ void gimbal_get_ctrl_way(void) {
     // 发弹控制
     if (rc_ctrl_data.mouse.press_right == true) {
       robot.weapon.ctrl_mode = _vision_ctrl;
+      robot.weapon.f_is_fire = is_fire_km_vision;
     } else {
       clear_ammo_num();
       robot.weapon.ctrl_mode = _manual_ctrl;
+      robot.weapon.f_is_fire = is_fire_km;
     }
     // 移动控制
     if (robot.move_mode != _lob_mode) { // 非吊射
@@ -367,7 +369,7 @@ void gimbal_get_ctrl_way(void) {
     }
     extern bool base_mode_enable;
     extern bool had_find_base;
-   
+
     if (IS_KEY_PRESS(KEY_B) == true && IS_KEY_LAST_PRESS(KEY_B) == false) {
       base_mode_enable_flag = !base_mode_enable_flag;
     }
@@ -379,10 +381,7 @@ void gimbal_get_ctrl_way(void) {
     }
     // 接入视觉控制自动开火
     robot.weapon.f_is_ready_to_fire = is_ready_to_fire_km;
-    if (IS_KEY_PRESS(KEY_CTRL) == true)
-      robot.weapon.f_is_fire = is_fire_km_vision;
-    else
-      robot.weapon.f_is_fire = is_fire_km;
+
     // 发弹是否取消热量限制
     if (IS_KEY_PRESS(KEY_F) == true && rc_ctrl_data.mouse.press_left == 1) {
 
@@ -532,18 +531,23 @@ void robot_gimbal_tim_loop(void) {
 
   get_vision_aim_mode();
   extern attack_target_type_t attack_target_type;
-  if (attack_target_type != base_mid_armor) {
-    // 仅当看到过装甲板且找到前哨站
-    robot.weapon._is_vision_ok =
-        get_vision_ctrl(&vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
-                        &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq,
-                        robot.is_center_fire);
-  } else {
-    refresh_base_mode(false);
-    robot.weapon._is_vision_ok = get_vision_ctrl_base_mode(
-        &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
-        &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq);
-  }
+  robot.weapon._is_vision_ok = get_vision_ctrl(
+      &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
+      &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq, robot.is_center_fire);
+  // if (attack_target_type != base_mid_armor) {
+  //   robot.base_offset_in = 0;
+  //   // 仅当看到过装甲板且找到前哨站
+  //   robot.weapon._is_vision_ok =
+  //       get_vision_ctrl(&vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
+  //                       &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq,
+  //                       robot.is_center_fire);
+  // } else {
+  //   refresh_base_mode(false);
+  //   robot.base_offset_in = 1;
+  //   robot.weapon._is_vision_ok = get_vision_ctrl_base_mode(
+  //       &vision_ctrl_state.pitch, &vision_ctrl_state.yaw,
+  //       &vision_ctrl_state.shooter_yaw, 1.f / fs_tim_freq);
+  // }
   get_vision_suggest_fire(&gimbal_expt_state, &gimbal_real_state);
   if (robot.weapon._is_vision_ok == VISION_OK)
     robot.robot_flag.vision_data_ready_flag = true;
